@@ -1,0 +1,11 @@
+## Interface: 120001
+## Title: Currency Tracker
+## Notes: Tracks selected currencies in a movable transparent list
+## Author: Sanbr
+## Version: 1.0
+## SavedVariablesPerCharacter: CurrencyTrackerDB
+## IconTexture: 5868902
+## Category-enUS: User Interface
+
+CurrencyTracker.lua
+CurrencyTracker.xml
