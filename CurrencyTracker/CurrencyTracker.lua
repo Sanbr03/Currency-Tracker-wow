@@ -24,11 +24,21 @@ local function InitDB()
         CurrencyTrackerDB = {}
     end
 
-    CurrencyTrackerDB.currencies = CurrencyTrackerDB.currencies or CopyTable(DEFAULT_CURRENCIES)
     CurrencyTrackerDB.fontSize = CurrencyTrackerDB.fontSize or 14
     CurrencyTrackerDB.opacity = CurrencyTrackerDB.opacity or 0.3
     CurrencyTrackerDB.showGold = CurrencyTrackerDB.showGold or false
     CurrencyTrackerDB.position = CurrencyTrackerDB.position or { "CENTER", "CENTER", 0, 0 }
+
+    -- Only create currencies table if it doesn't exist
+    if not CurrencyTrackerDB.currencies then
+        CurrencyTrackerDB.currencies = {}
+    end
+
+    -- Only populate defaults the first time EVER
+    if not CurrencyTrackerDB.initialized then
+        CurrencyTrackerDB.currencies = CopyTable(DEFAULT_CURRENCIES)
+        CurrencyTrackerDB.initialized = true
+    end
 end
 
 -------------------------------------------------
@@ -124,19 +134,55 @@ end
 -------------------------------------------------
 
 function CurrencyTracker:CreateSettings()
-    local f = CreateFrame("Frame", "CurrencyTrackerSettings", UIParent, "BasicFrameTemplateWithInset")
+    local f = CreateFrame("Frame", "CurrencyTrackerSettings", UIParent, "BackdropTemplate")
     f:SetSize(520, 500)
     f:SetPoint("CENTER")
+    f:SetFrameStrata("DIALOG")
+    f:SetFrameLevel(100)
+    f:SetClampedToScreen(true)
+
     f:SetMovable(true)
     f:EnableMouse(true)
     f:RegisterForDrag("LeftButton")
     f:SetScript("OnDragStart", f.StartMoving)
     f:SetScript("OnDragStop", f.StopMovingOrSizing)
-    f:Hide()
 
-    f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    f.title:SetPoint("CENTER", f.TitleBg, "CENTER")
-    f.title:SetText("Currency Tracker Settings")
+    -- Modern Dark Backdrop
+    f:SetBackdrop({
+        bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+        edgeFile = "Interface/Buttons/WHITE8x8",
+        edgeSize = 1,
+    })
+
+    f:SetBackdropColor(0.08, 0.08, 0.1, 0.98)
+    f:SetBackdropBorderColor(0.2, 0.2, 0.25, 1)
+
+    -------------------------------------------------
+    -- TITLE
+    -------------------------------------------------
+
+    f.title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    f.title:SetPoint("TOP", 0, -15)
+    f.title:SetText("Currency Tracker")
+    f.title:SetTextColor(1, 0.82, 0) -- WoW yellow
+
+    -------------------------------------------------
+    -- CLOSE BUTTON (modern X)
+    -------------------------------------------------
+
+    local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", 4, 4)
+
+    -------------------------------------------------
+    -- CONTENT CONTAINER
+    -------------------------------------------------
+
+    local contentFrame = CreateFrame("Frame", nil, f)
+    contentFrame:SetPoint("TOPLEFT", 15, -50)
+    contentFrame:SetPoint("BOTTOMRIGHT", -15, 15)
+
+    f.content = contentFrame
+    f:Hide()
 
     -------------------------------------------------
     -- TAB BUTTONS
@@ -159,13 +205,11 @@ function CurrencyTracker:CreateSettings()
     -- CONTENT FRAMES (FIXED ANCHORING)
     -------------------------------------------------
 
-    local general = CreateFrame("Frame", nil, f)
-    general:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -60)
-    general:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, 10)
+    local general = CreateFrame("Frame", nil, f.content)
+    general:SetAllPoints()
 
-    local allTab = CreateFrame("Frame", nil, f)
-    allTab:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -60)
-    allTab:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, 10)
+    local allTab = CreateFrame("Frame", nil, f.content)
+    allTab:SetAllPoints()
     allTab:Hide()
 
     local function SelectTab(id)
@@ -253,10 +297,40 @@ function CurrencyTracker:CreateSettings()
 
         local y = -5
 
+        -- Build a master list from:
+        -- 1) Default currencies
+        -- 2) Currently tracked currencies
+        local masterList = {}
+
+        local function AddCurrency(id)
+            if id and not tContains(masterList, id) then
+                table.insert(masterList, id)
+            end
+        end
+
+        -- 1️ Always include defaults
+        for _, id in ipairs(DEFAULT_CURRENCIES) do
+            AddCurrency(id)
+        end
+
+        -- 2️ Include tracked currencies
+        for _, id in ipairs(CurrencyTrackerDB.currencies) do
+            AddCurrency(id)
+        end
+
+        -- 3️ Include character discovered currencies
         for i = 1, C_CurrencyInfo.GetCurrencyListSize() do
             local info = C_CurrencyInfo.GetCurrencyListInfo(i)
-
             if info and not info.isHeader then
+                AddCurrency(info.currencyID)
+            end
+        end
+
+        -- Now build UI from master list
+        for _, currencyID in ipairs(masterList) do
+            local info = C_CurrencyInfo.GetCurrencyInfo(currencyID)
+
+            if info and info.name then
                 local nameMatch = true
 
                 if filter and filter ~= "" then
@@ -270,16 +344,16 @@ function CurrencyTracker:CreateSettings()
                     local iconSize = 16
                     local iconString = "|T" .. info.iconFileID .. ":" ..
                         iconSize .. ":" .. iconSize .. ":0:0:64:64:4:60:4:60|t "
-                    check.text:SetText(iconString .. info.name)
 
-                    check:SetChecked(tContains(CurrencyTrackerDB.currencies, info.currencyID))
+                    check.text:SetText(iconString .. info.name)
+                    check:SetChecked(tContains(CurrencyTrackerDB.currencies, currencyID))
 
                     check:SetScript("OnClick", function(self)
                         if self:GetChecked() then
-                            table.insert(CurrencyTrackerDB.currencies, info.currencyID)
+                            table.insert(CurrencyTrackerDB.currencies, currencyID)
                         else
                             for k, v in ipairs(CurrencyTrackerDB.currencies) do
-                                if v == info.currencyID then
+                                if v == currencyID then
                                     table.remove(CurrencyTrackerDB.currencies, k)
                                     break
                                 end
