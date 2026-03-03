@@ -291,8 +291,10 @@ function CurrencyTracker:CreateSettings()
         wipe(checkboxes)
 
         local filter = searchBox:GetText()
-        if filter then
+        if filter and filter ~= "" then
             filter = string.lower(filter)
+        else
+            filter = nil
         end
 
         local y = -5
@@ -371,7 +373,7 @@ function CurrencyTracker:CreateSettings()
         content:SetHeight(math.abs(y) + 20)
     end
 
-    searchBox:SetScript("OnTextChanged", function()
+    searchBox:HookScript("OnTextChanged", function(self)
         RebuildCurrencyList()
     end)
 
