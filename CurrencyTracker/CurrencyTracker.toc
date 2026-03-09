@@ -2,12 +2,13 @@
 ## Title: Currency Tracker
 ## Notes: Tracks selected currencies in a movable transparent list
 ## Author: Sanbr
-## Version: 1.3
+## Version: 1.4
 ## SavedVariablesPerCharacter: CurrencyTrackerDB
 ## IconTexture: 5868902
 ## Category-enUS: User Interface
 
 CurrencyTracker.lua
+
 
 
 
