@@ -103,11 +103,18 @@ function CurrencyTracker:UpdateDisplay()
             local line = f:CreateFontString(nil, "OVERLAY", "GameFontWhite")
             line:SetFont(STANDARD_TEXT_FONT, fontSize, "OUTLINE")
             line:SetPoint("TOPLEFT", 10, yOffset)
+            local currencyLine
 
-            local text = "|T" .. info.iconFileID .. ":" .. fontSize .. ":" .. fontSize .. "|t "
-                .. info.name .. " " .. info.quantity .. "/" .. info.maxQuantity
+            if info.totalEarned == 0 then
+                currencyLine = "|T" .. info.iconFileID .. ":" .. fontSize .. ":" .. fontSize .. "|t "
+                    .. info.name .. " " .. info.quantity
+            else
+                currencyLine = "|T" .. info.iconFileID .. ":" .. fontSize .. ":" .. fontSize .. "|t "
+                    .. info.name .. " " .. info.quantity
+                    .. " (" .. info.totalEarned .. "/" .. info.maxQuantity .. ")"
+            end
 
-            line:SetText(text)
+            line:SetText(currencyLine)
 
             yOffset = yOffset - (fontSize + 6)
             width = math.max(width, line:GetStringWidth())
