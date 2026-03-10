@@ -1,21 +1,27 @@
+--retail only
 local addonName, CurrencyTracker = ...
 CurrencyTracker = CreateFrame("Frame")
-
 
 -------------------------------------------------
 -- DEFAULTS
 -------------------------------------------------
 
+local CrestFramWidth = 200
+local CrestFramWHeight = 42
+local AdventurerCrestID = 3383
+local VeteranCrestID = 3341
+local ChampionCrestID = 3343
+local HeroCrestID = 3345
+local MythCrestID = 3347
 
-
-local DEFAULT_CURRENCIES = { 3383, 3341, 3343, 3345, 3347 }
+local DEFAULT_CURRENCIES = { AdventurerCrestID, VeteranCrestID, ChampionCrestID, HeroCrestID, MythCrestID }
 
 local CURRENCY_COLORS = {
-    [3383] = { 1.00, 0.49, 0.040 },
-    [3341] = { 0.25, 0.78, 0.92 },
-    [3343] = { 0.60, 0.30, 1.00 },
-    [3345] = { 0.20, 0.90, 0.30 },
-    [3347] = { 0.77, 0.12, 0.23 },
+    [AdventurerCrestID] = { 1.00, 0.49, 0.040 },
+    [VeteranCrestID] = { 0.25, 0.78, 0.92 },
+    [ChampionCrestID] = { 0.60, 0.30, 1.00 },
+    [HeroCrestID] = { 0.20, 0.90, 0.30 },
+    [MythCrestID] = { 0.77, 0.12, 0.23 },
 }
 
 local function CopyTable(tbl)
@@ -39,26 +45,26 @@ local function InitDB()
     CurrencyTrackerDB.opacity = CurrencyTrackerDB.opacity or 0.3
     CurrencyTrackerDB.showGold = CurrencyTrackerDB.showGold or false
     CurrencyTrackerDB.position = CurrencyTrackerDB.position or { "CENTER", "CENTER", 0, 0 }
-    CurrencyTrackerDB.showRepBar = CurrencyTrackerDB.showRepBar or false
+    CurrencyTrackerDB.showCrestBar = CurrencyTrackerDB.showCrestBar or false
 
     -- Only create currencies table if it doesn't exist
     if not CurrencyTrackerDB.currencies then
         CurrencyTrackerDB.currencies = {}
     end
 
-    -- Only populate defaults the first time EVER
+    -- First-time initialization
     if not CurrencyTrackerDB.initialized then
         CurrencyTrackerDB.currencies = CopyTable(DEFAULT_CURRENCIES)
+        CurrencyTrackerDB.showCrestBar = true
         CurrencyTrackerDB.initialized = true
     end
 end
 
-function CurrencyTracker:CreateRepBar(info, index)
-    --if (info.totalEarned == 0) then return end
+function CurrencyTracker:CreateCrestBar(info, index)
     local color = CURRENCY_COLORS[info.currencyID] or { 0.95, 0.45, 0.10 }
 
     local f = CreateFrame("Frame", nil, self.frame, "BackdropTemplate")
-    f:SetSize(200, 42)
+    f:SetSize(CrestFramWidth, CrestFramWHeight)
 
     if index == 1 then
         f:SetPoint("TOP", self.frame, "BOTTOM", 0, -6)
@@ -72,7 +78,7 @@ function CurrencyTracker:CreateRepBar(info, index)
         edgeSize = 1,
     })
 
-    f:SetBackdropColor(color[1] * .08, color[2] * .08, color[3] * .08, 0.60)
+    f:SetBackdropColor(color[1] * .08, color[2] * .08, color[3] * .08, 0.90)
 
     -- BORDER COLOR MATCHES BAR
     f:SetBackdropBorderColor(color[1], color[2], color[3], 1)
@@ -96,7 +102,7 @@ function CurrencyTracker:CreateRepBar(info, index)
     f.name:SetTextColor(color[1], color[2], color[3])
 
     f.count = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    f.count:SetPoint("TOPRIGHT", -8, -4)
+    f.count:SetPoint("TOPRIGHT", -8, -7)
     f.count:SetText(info.quantity)
     f.count:SetTextColor(color[1], color[2], color[3])
 
@@ -113,14 +119,13 @@ function CurrencyTracker:CreateRepBar(info, index)
     -------------------------------------------------
     -- BAR FILL
     -------------------------------------------------
-
     local percent = info.totalEarned / info.maxQuantity
     percent = math.min(percent, 1)
 
     local bar = f:CreateTexture(nil, "OVERLAY")
     bar:SetPoint("LEFT", barBG, "LEFT")
     bar:SetHeight(14)
-    bar:SetWidth((200 - 16) * percent)
+    bar:SetWidth((CrestFramWidth - 16) * percent)
 
     -- BAR COLOR MATCHES FRAME
     bar:SetColorTexture(color[1], color[2], color[3], 1)
@@ -207,6 +212,7 @@ function CurrencyTracker:UpdateDisplay()
     local fontSize = CurrencyTrackerDB.fontSize
     local yOffset = -5
     local width = 0
+    local repBarCount = 0
 
     for _, id in ipairs(CurrencyTrackerDB.currencies) do
         local info = C_CurrencyInfo.GetCurrencyInfo(id)
@@ -219,31 +225,40 @@ function CurrencyTracker:UpdateDisplay()
             if info.totalEarned == 0 then
                 currencyLine = "|T" .. info.iconFileID .. ":" .. fontSize .. ":" .. fontSize .. "|t "
                     .. info.name .. " " .. info.quantity
+
+                line:SetText(currencyLine)
+                yOffset = yOffset - (fontSize + 6)
+                width = math.max(width, line:GetStringWidth())
+                table.insert(self.lines, line)
             else
-                if CurrencyTrackerDB.showRepBar then
-                    local index = 1
-
-                    for _, id in ipairs(DEFAULT_CURRENCIES) do
-                        local info = C_CurrencyInfo.GetCurrencyInfo(id)
-
-                        if info and info.name then
-                            local bar = self:CreateRepBar(info, index)
-                            table.insert(self.repBars, bar)
-                            index = index + 1
-                        end
-                    end
-                else
+                if not CurrencyTrackerDB.showRepBar then
                     currencyLine = "|T" .. info.iconFileID .. ":" .. fontSize .. ":" .. fontSize .. "|t "
                         .. info.name .. " " .. info.quantity
                         .. " (" .. info.totalEarned .. "/" .. info.maxQuantity .. ")"
+
+                    line:SetText(currencyLine)
+                    yOffset = yOffset - (fontSize + 6)
+                    width = math.max(width, line:GetStringWidth())
+                    table.insert(self.lines, line)
                 end
             end
+        end
+    end
 
-            line:SetText(currencyLine)
-
-            yOffset = yOffset - (fontSize + 6)
-            width = math.max(width, line:GetStringWidth())
-            table.insert(self.lines, line)
+    -- Create rep bars if enabled
+    if CurrencyTrackerDB.showRepBar then
+        local index = 1
+        for _, id in ipairs(DEFAULT_CURRENCIES) do
+            local info = C_CurrencyInfo.GetCurrencyInfo(id)
+            if (info.totalEarned > 0) then
+                if info and info.name then
+                    local bar = self:CreateCrestBar(info, index)
+                    table.insert(self.repBars, bar)
+                    index = index + 1
+                    repBarCount = repBarCount + 1
+                    width = CrestFramWidth
+                end
+            end
         end
     end
 
@@ -257,8 +272,28 @@ function CurrencyTracker:UpdateDisplay()
         table.insert(self.lines, line)
     end
 
-    f:SetSize(width + 20, math.abs(yOffset) + 10)
+
+    -- Calculate total height: lines + spacing + rep bars
+    local totalHeight = math.abs(yOffset) + (repBarCount * (CrestFramWHeight + 6)) + 10
+
+    f:SetSize(width + 20, totalHeight)
     f.bg:SetColorTexture(0, 0, 0, CurrencyTrackerDB.opacity)
+
+    -- Reposition rep bars under the last text line
+    local startY = -5
+    for _, line in ipairs(self.lines) do
+        startY = startY - (line:GetStringHeight() + 6)
+    end
+
+    for i, bar in ipairs(self.repBars) do
+        bar:ClearAllPoints()
+        bar:SetPoint("TOPLEFT", 10, startY - ((i - 1) * (CrestFramWHeight + 6)))
+        bar:Show()
+    end
+
+
+    -- f:SetSize(width + 20, math.abs(yOffset) + 10)
+    -- f.bg:SetColorTexture(0, 0, 0, CurrencyTrackerDB.opacity)
 end
 
 -------------------------------------------------
@@ -270,9 +305,7 @@ function CurrencyTracker:CreateSettings()
     f:SetSize(520, 500)
     f:SetPoint("CENTER")
     f:SetFrameStrata("DIALOG")
-    f:SetFrameLevel(100)
-    f:SetClampedToScreen(true)
-
+    f:SetToplevel(true)
     f:SetMovable(true)
     f:EnableMouse(true)
     f:RegisterForDrag("LeftButton")
@@ -281,20 +314,20 @@ function CurrencyTracker:CreateSettings()
 
     -- Modern Dark Backdrop
     f:SetBackdrop({
-        bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-        edgeFile = "Interface/Buttons/WHITE8x8",
-        edgeSize = 1,
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = true,
+        tileSize = 32,
+        edgeSize = 32,
+        insets = { left = 8, right = 8, top = 8, bottom = 8 }
     })
-
-    f:SetBackdropColor(0.08, 0.08, 0.1, 0.98)
-    f:SetBackdropBorderColor(0.2, 0.2, 0.25, 1)
 
     -------------------------------------------------
     -- TITLE
     -------------------------------------------------
 
     f.title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    f.title:SetPoint("TOP", 0, -15)
+    f.title:SetPoint("TOP", 0, -20)
     f.title:SetText("Currency Tracker")
     f.title:SetTextColor(1, 0.82, 0) -- WoW yellow
 
@@ -302,8 +335,7 @@ function CurrencyTracker:CreateSettings()
     -- CLOSE BUTTON (modern X)
     -------------------------------------------------
 
-    local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", 4, 4)
+    CreateFrame("Button", nil, f, "UIPanelCloseButton"):SetPoint("TOPRIGHT")
 
     -------------------------------------------------
     -- CONTENT CONTAINER
@@ -386,6 +418,23 @@ function CurrencyTracker:CreateSettings()
         f:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     end)
 
+    -------------------------------------------------
+    -- RELOAD UI BUTTON (ONLY FOR FALCÓNE)
+    -------------------------------------------------
+
+    local playerName = UnitName("player")
+
+    if playerName == "Falcóne" or playerName == "Lindstrom" then
+        local reloadBtn = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
+        reloadBtn:SetSize(140, 25)
+        reloadBtn:SetPoint("TOPLEFT", resetBtn, "BOTTOMLEFT", 0, -8)
+        reloadBtn:SetText("Reload UI")
+
+        reloadBtn:SetScript("OnClick", function()
+            ReloadUI()
+        end)
+    end
+
     local slider = CreateFrame("Slider", nil, general, "OptionsSliderTemplate")
     slider:SetPoint("TOPLEFT", resetBtn, "BOTTOMLEFT", 0, -40)
     slider:SetMinMaxValues(0, 1)
@@ -408,7 +457,7 @@ function CurrencyTracker:CreateSettings()
 
     -- Search Box
     local searchBox = CreateFrame("EditBox", nil, allTab, "SearchBoxTemplate")
-    searchBox:SetPoint("TOPLEFT", allTab, "TOPLEFT", 0, -5)
+    searchBox:SetPoint("TOPLEFT", allTab, "TOPLEFT", 10, -5)
     searchBox:SetPoint("TOPRIGHT", allTab, "TOPRIGHT", -20, -5)
     searchBox:SetHeight(20)
     searchBox:SetAutoFocus(false)
@@ -579,7 +628,6 @@ CurrencyTracker:SetScript("OnEvent", function(self, event)
     if event == "PLAYER_LOGIN" then
         InitDB()
         self:CreateDisplay()
-
         self:CreateMinimapButton()
     elseif event == "CURRENCY_DISPLAY_UPDATE" then
         self:UpdateDisplay()
