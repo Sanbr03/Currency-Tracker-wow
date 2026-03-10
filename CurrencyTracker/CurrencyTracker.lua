@@ -46,6 +46,7 @@ local function InitDB()
     CurrencyTrackerDB.showGold = CurrencyTrackerDB.showGold or false
     CurrencyTrackerDB.position = CurrencyTrackerDB.position or { "CENTER", "CENTER", 0, 0 }
     CurrencyTrackerDB.showCrestBar = CurrencyTrackerDB.showCrestBar or false
+    CurrencyTrackerDB.upgradeGoldSpent = CurrencyTrackerDB.upgradeGoldSpent or 0
 
     -- Only create currencies table if it doesn't exist
     if not CurrencyTrackerDB.currencies then
@@ -452,6 +453,32 @@ function CurrencyTracker:CreateSettings()
     slider.label:SetText("Background Opacity")
 
     -------------------------------------------------
+    -- UPGRADE GOLD SPENT DISPLAY
+    -------------------------------------------------
+
+    local upgradeSpentText = general:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    upgradeSpentText:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -25)
+
+    upgradeSpentText:SetText(
+        "Gold Spent on Item Upgrades: " ..
+        C_CurrencyInfo.GetCoinTextureString(CurrencyTrackerDB.upgradeGoldSpent)
+    )
+
+
+    local resetUpgrade = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
+    resetUpgrade:SetSize(160, 22)
+    resetUpgrade:SetPoint("TOPLEFT", upgradeSpentText, "BOTTOMLEFT", 0, -5)
+    resetUpgrade:SetText("Reset Upgrade Gold")
+
+    resetUpgrade:SetScript("OnClick", function()
+        CurrencyTrackerDB.upgradeGoldSpent = 0
+        upgradeSpentText:SetText(
+            "Gold Spent on Item Upgrades: " ..
+            C_CurrencyInfo.GetCoinTextureString(0)
+        )
+    end)
+
+    -------------------------------------------------
     -- ALL CURRENCIES TAB (SCROLL + SEARCH)
     -------------------------------------------------
 
@@ -618,6 +645,18 @@ function CurrencyTracker:CreateMinimapButton()
 end
 
 -------------------------------------------------
+-- UPGRADE VENDOR GOLD TRACKER
+-------------------------------------------------
+
+local lastMoney = 0
+
+CurrencyTracker:RegisterEvent("PLAYER_MONEY")
+
+local function IsUpgradeFrameOpen()
+    return ItemUpgradeFrame and ItemUpgradeFrame:IsShown()
+end
+
+-------------------------------------------------
 -- EVENTS
 -------------------------------------------------
 
@@ -627,9 +666,23 @@ CurrencyTracker:RegisterEvent("CURRENCY_DISPLAY_UPDATE")
 CurrencyTracker:SetScript("OnEvent", function(self, event)
     if event == "PLAYER_LOGIN" then
         InitDB()
+        lastMoney = GetMoney()
         self:CreateDisplay()
         self:CreateMinimapButton()
     elseif event == "CURRENCY_DISPLAY_UPDATE" then
         self:UpdateDisplay()
+    elseif event == "PLAYER_MONEY" then
+        local currentMoney = GetMoney()
+
+        if currentMoney < lastMoney then
+            local spent = lastMoney - currentMoney
+
+            if IsUpgradeFrameOpen() then
+                CurrencyTrackerDB.upgradeGoldSpent =
+                    CurrencyTrackerDB.upgradeGoldSpent + spent
+            end
+        end
+
+        lastMoney = currentMoney
     end
 end)
