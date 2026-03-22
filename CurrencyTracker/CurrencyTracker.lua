@@ -251,7 +251,7 @@ function CurrencyTracker:UpdateDisplay()
         local index = 1
         for _, id in ipairs(DEFAULT_CURRENCIES) do
             local info = C_CurrencyInfo.GetCurrencyInfo(id)
-            if (info.totalEarned > 0) then
+            if (info.totalEarned > 0 or info.quantity > 0) then
                 if info and info.name then
                     local bar = self:CreateCrestBar(info, index)
                     table.insert(self.repBars, bar)
@@ -425,7 +425,7 @@ function CurrencyTracker:CreateSettings()
 
     local playerName = UnitName("player")
 
-    if playerName == "Falcóne" or playerName == "Lindstrom" then
+    if playerName == "Falcóne" or playerName == "Lindstrom" or playerName == "Sanbr" then
         local reloadBtn = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
         reloadBtn:SetSize(140, 25)
         reloadBtn:SetPoint("TOPLEFT", resetBtn, "BOTTOMLEFT", 0, -8)
@@ -481,24 +481,34 @@ function CurrencyTracker:CreateSettings()
     -------------------------------------------------
     -- ALL CURRENCIES TAB (SCROLL + SEARCH)
     -------------------------------------------------
+    local checkboxes = {}
 
     -- Search Box
     local searchBox = CreateFrame("EditBox", nil, allTab, "SearchBoxTemplate")
-    searchBox:SetPoint("TOPLEFT", allTab, "TOPLEFT", 10, -5)
-    searchBox:SetPoint("TOPRIGHT", allTab, "TOPRIGHT", -20, -5)
+    searchBox:SetPoint("TOPLEFT", allTab, "TOPLEFT", 20, -40)
+    searchBox:SetPoint("TOPRIGHT", allTab, "TOPRIGHT", -20, -40)
     searchBox:SetHeight(20)
     searchBox:SetAutoFocus(false)
+
+    local uncheckBtn = CreateFrame("Button", nil, allTab, "UIPanelButtonTemplate")
+    uncheckBtn:SetSize(140, 25)
+    uncheckBtn:SetPoint("TOPRIGHT", allTab, "TOPRIGHT", -20, -5)
+    uncheckBtn:SetText("Uncheck All")
+    uncheckBtn:SetScript("OnClick", function()
+        for _, cb in ipairs(checkboxes) do
+            cb:SetChecked(false)
+            cb:GetScript("OnClick")(cb)
+        end
+    end)
 
     -- Scroll Frame
     local scroll = CreateFrame("ScrollFrame", nil, allTab, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", searchBox, "BOTTOMLEFT", 0, -5)
-    scroll:SetPoint("BOTTOMRIGHT", -30, 5)
+    scroll:SetPoint("BOTTOMRIGHT", -43, 10)
 
     local content = CreateFrame("Frame", nil, scroll)
     content:SetSize(1, 1)
     scroll:SetScrollChild(content)
-
-    local checkboxes = {}
 
     local function RebuildCurrencyList()
         -- Clear old checkboxes
@@ -593,6 +603,11 @@ function CurrencyTracker:CreateSettings()
     searchBox:HookScript("OnTextChanged", function(self)
         RebuildCurrencyList()
     end)
+
+
+
+
+
 
     RebuildCurrencyList()
 
