@@ -4,6 +4,7 @@
 ## Author: Sanbr
 ## Version: 1.8
 ## SavedVariablesPerCharacter: CurrencyTrackerDB
+## SavedVariables: CurrencyTrackerAcctDB
 ## IconTexture: 5868902
 ## Category-enUS: User Interface
 
