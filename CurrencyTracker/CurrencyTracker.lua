@@ -13,6 +13,7 @@ local VeteranCrestID = 3341
 local ChampionCrestID = 3343
 local HeroCrestID = 3345
 local MythCrestID = 3347
+local ToonGoldSpent = 0
 
 local DEFAULT_CURRENCIES = { AdventurerCrestID, VeteranCrestID, ChampionCrestID, HeroCrestID, MythCrestID }
 
@@ -41,12 +42,22 @@ local function InitDB()
         CurrencyTrackerDB = {}
     end
 
+    if not CurrencyTrackerAcctDB then
+        CurrencyTrackerAcctDB = {}
+    end
+
+    -- toon lvl saved data
     CurrencyTrackerDB.fontSize = CurrencyTrackerDB.fontSize or 14
     CurrencyTrackerDB.opacity = CurrencyTrackerDB.opacity or 0.3
     CurrencyTrackerDB.showGold = CurrencyTrackerDB.showGold or false
     CurrencyTrackerDB.position = CurrencyTrackerDB.position or { "CENTER", "CENTER", 0, 0 }
     CurrencyTrackerDB.showCrestBar = CurrencyTrackerDB.showCrestBar or false
     CurrencyTrackerDB.upgradeGoldSpent = CurrencyTrackerDB.upgradeGoldSpent or 0
+    CurrencyTrackerDB.upgradeGoldSpentXpac = CurrencyTrackerDB.upgradeGoldSpentXpac or 0
+    ToonGoldSpent = CurrencyTrackerDB.upgradeGoldSpent
+
+    --Account lvl saved data
+    CurrencyTrackerAcctDB.upgradeGoldSpentAcct = CurrencyTrackerAcctDB.upgradeGoldSpentAcct or 0
 
     -- Only create currencies table if it doesn't exist
     if not CurrencyTrackerDB.currencies then
@@ -291,10 +302,6 @@ function CurrencyTracker:UpdateDisplay()
         bar:SetPoint("TOPLEFT", 10, startY - ((i - 1) * (CrestFramWHeight + 6)))
         bar:Show()
     end
-
-
-    -- f:SetSize(width + 20, math.abs(yOffset) + 10)
-    -- f.bg:SetColorTexture(0, 0, 0, CurrencyTrackerDB.opacity)
 end
 
 -------------------------------------------------
@@ -313,7 +320,6 @@ function CurrencyTracker:CreateSettings()
     f:SetScript("OnDragStart", f.StartMoving)
     f:SetScript("OnDragStop", f.StopMovingOrSizing)
 
-    -- Modern Dark Backdrop
     f:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
         edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
@@ -363,7 +369,12 @@ function CurrencyTracker:CreateSettings()
     tab2:SetText("All Currencies")
     tab2:SetPoint("LEFT", tab1, "RIGHT", -15, 0)
 
-    PanelTemplates_SetNumTabs(f, 2)
+    local tab3 = CreateFrame("Button", nil, f, "PanelTabButtonTemplate")
+    tab3:SetID(3)
+    tab3:SetText("Item Upgrade")
+    tab3:SetPoint("LEFT", tab2, "RIGHT", -15, 0)
+
+    PanelTemplates_SetNumTabs(f, 3)
     PanelTemplates_SetTab(f, 1)
 
     -------------------------------------------------
@@ -377,14 +388,20 @@ function CurrencyTracker:CreateSettings()
     allTab:SetAllPoints()
     allTab:Hide()
 
+    local IUTab = CreateFrame("Frame", nil, f.content)
+    IUTab:SetAllPoints()
+    IUTab:Hide()
+
     local function SelectTab(id)
         PanelTemplates_SetTab(f, id)
         general:SetShown(id == 1)
         allTab:SetShown(id == 2)
+        IUTab:SetShown(id == 3)
     end
 
     tab1:SetScript("OnClick", function() SelectTab(1) end)
     tab2:SetScript("OnClick", function() SelectTab(2) end)
+    tab3:SetScript("OnClick", function() SelectTab(3) end)
 
     -------------------------------------------------
     -- GENERAL TAB CONTENT
@@ -451,32 +468,6 @@ function CurrencyTracker:CreateSettings()
     slider.label = slider:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     slider.label:SetPoint("TOP", slider, "BOTTOM", 0, -2)
     slider.label:SetText("Background Opacity")
-
-    -------------------------------------------------
-    -- UPGRADE GOLD SPENT DISPLAY
-    -------------------------------------------------
-
-    local upgradeSpentText = general:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    upgradeSpentText:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -25)
-
-    upgradeSpentText:SetText(
-        "Gold Spent on Item Upgrades: " ..
-        C_CurrencyInfo.GetCoinTextureString(CurrencyTrackerDB.upgradeGoldSpent)
-    )
-
-
-    local resetUpgrade = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
-    resetUpgrade:SetSize(160, 22)
-    resetUpgrade:SetPoint("TOPLEFT", upgradeSpentText, "BOTTOMLEFT", 0, -5)
-    resetUpgrade:SetText("Reset Upgrade Gold")
-
-    resetUpgrade:SetScript("OnClick", function()
-        CurrencyTrackerDB.upgradeGoldSpent = 0
-        upgradeSpentText:SetText(
-            "Gold Spent on Item Upgrades: " ..
-            C_CurrencyInfo.GetCoinTextureString(0)
-        )
-    end)
 
     -------------------------------------------------
     -- ALL CURRENCIES TAB (SCROLL + SEARCH)
@@ -603,16 +594,63 @@ function CurrencyTracker:CreateSettings()
     searchBox:HookScript("OnTextChanged", function(self)
         RebuildCurrencyList()
     end)
-
-
-
-
-
-
     RebuildCurrencyList()
-
-
     self.settings = f
+
+    -------------------------------------------------
+    -- Item Upgrade gold tab
+    -------------------------------------------------
+    -------------------------------------------------
+    -- UPGRADE GOLD SPENT DISPLAY
+    -------------------------------------------------
+    local playerName = UnitName("player")
+
+    local upgradeSpentText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    upgradeSpentText:SetPoint("TOPLEFT", 10, 0)
+
+    upgradeSpentText:SetText(playerName .. " gold Spent on Item Upgrades: " ..
+        C_CurrencyInfo.GetCoinTextureString(CurrencyTrackerDB.upgradeGoldSpent))
+
+    local upgradeSpentXpacText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    upgradeSpentXpacText:SetPoint("TOPLEFT", upgradeSpentText, "BOTTOMLEFT", 0, 0)
+
+    upgradeSpentXpacText:SetText(playerName .. " gold Spent on Item Upgrades: " ..
+        C_CurrencyInfo.GetCoinTextureString(CurrencyTrackerDB.upgradeGoldSpentXpac))
+
+    local upgradeSpentXpacAccountText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    upgradeSpentXpacAccountText:SetPoint("TOPLEFT", upgradeSpentXpacText, "BOTTOMLEFT", 0, 0)
+
+    upgradeSpentXpacAccountText:SetText("Account gold Spent on Item Upgrades: " ..
+        C_CurrencyInfo.GetCoinTextureString(CurrencyTrackerAcctDB.upgradeGoldSpentAcct))
+
+    local resetUpgrade = CreateFrame("Button", nil, IUTab, "UIPanelButtonTemplate")
+    resetUpgrade:SetSize(160, 22)
+    resetUpgrade:SetPoint("BOTTOMRIGHT", -10, 0)
+    resetUpgrade:SetText("Reset Upgrade Gold")
+
+    resetUpgrade:SetScript("OnClick", function()
+        CurrencyTrackerDB.upgradeGoldSpent = 0
+        upgradeSpentText:SetText(
+            "Gold Spent on Item Upgrades: " ..
+            C_CurrencyInfo.GetCoinTextureString(0)
+        )
+    end)
+
+    -------------------------------------------------
+    -- RELOAD UI BUTTON
+    -------------------------------------------------
+
+
+    if playerName == "Falcóne" or playerName == "Lindstrom" or playerName == "Sanbr" then
+        local reloadBtn = CreateFrame("Button", nil, IUTab, "UIPanelButtonTemplate")
+        reloadBtn:SetSize(140, 25)
+        reloadBtn:SetPoint("BOTTOMLEFT", 10, 0)
+        reloadBtn:SetText("Reload UI")
+
+        reloadBtn:SetScript("OnClick", function()
+            ReloadUI()
+        end)
+    end
 end
 
 function CurrencyTracker:ToggleSettings()
@@ -695,6 +733,8 @@ CurrencyTracker:SetScript("OnEvent", function(self, event)
             if IsUpgradeFrameOpen() then
                 CurrencyTrackerDB.upgradeGoldSpent =
                     CurrencyTrackerDB.upgradeGoldSpent + spent
+
+                ToonGoldSpent = ToonGoldSpent + spent
             end
         end
 
