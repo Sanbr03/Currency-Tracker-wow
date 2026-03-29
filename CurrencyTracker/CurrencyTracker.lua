@@ -21,7 +21,7 @@ local CURRENCY_COLORS = {
     [AdventurerCrestID] = { 1.00, 0.49, 0.040 },
     [VeteranCrestID] = { 0.25, 0.78, 0.92 },
     [ChampionCrestID] = { 0.60, 0.30, 1.00 },
-    [HeroCrestID] = { 0.20, 0.90, 0.30 },
+    [HeroCrestID] = { 0.13, 0.69, 0.29 },
     [MythCrestID] = { 0.77, 0.12, 0.23 },
 }
 
@@ -150,7 +150,9 @@ function CurrencyTracker:CreateCrestBar(info, index)
     f.progress:SetText(info.totalEarned .. " / " .. info.maxQuantity)
 
     -- TEXT COLOR MATCHES BAR
-    f.progress:SetTextColor(1, 1, 1)
+    f.progress:SetFont(STANDARD_TEXT_FONT, 10, "OUTLINE")
+    f.progress:SetTextColor(0.91, 0.92, 0.91)
+    
 
     f.bar = bar
     f.barBG = barBG
