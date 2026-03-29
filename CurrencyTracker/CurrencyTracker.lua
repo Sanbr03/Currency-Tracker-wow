@@ -24,6 +24,11 @@ local CURRENCY_COLORS = {
     [HeroCrestID] = { 0.13, 0.69, 0.29 },
     [MythCrestID] = { 0.77, 0.12, 0.23 },
 }
+local DebugPlayers = {
+    "Falcóne",
+    "Lindstrom",
+    "Sanbr",
+}
 
 local function CopyTable(tbl)
     local copy = {}
@@ -69,10 +74,22 @@ local function InitDB()
         CurrencyTrackerDB.showCrestBar = true
         CurrencyTrackerDB.initialized = true
     end
+
+    -- Crest Colors (saved)
+    if not CurrencyTrackerAcctDB.crestColors then
+        CurrencyTrackerAcctDB.crestColors = CopyTable(CURRENCY_COLORS)
+    end
+end
+
+function CurrencyTracker:GetCrestColor(currencyID)
+    if CurrencyTrackerAcctDB and CurrencyTrackerAcctDB.crestColors and CurrencyTrackerAcctDB.crestColors[currencyID] then
+        return CurrencyTrackerAcctDB.crestColors[currencyID]
+    end
+    return CURRENCY_COLORS[currencyID] or { 1, 1, 1 }
 end
 
 function CurrencyTracker:CreateCrestBar(info, index)
-    local color = CURRENCY_COLORS[info.currencyID] or { 0.95, 0.45, 0.10 }
+    local color = CurrencyTracker:GetCrestColor(info.currencyID)
 
     local f = CreateFrame("Frame", nil, self.frame, "BackdropTemplate")
     f:SetSize(CrestFramWidth, CrestFramWHeight)
@@ -152,7 +169,7 @@ function CurrencyTracker:CreateCrestBar(info, index)
     -- TEXT COLOR MATCHES BAR
     f.progress:SetFont(STANDARD_TEXT_FONT, 10, "OUTLINE")
     f.progress:SetTextColor(0.91, 0.92, 0.91)
-    
+
 
     f.bar = bar
     f.barBG = barBG
@@ -305,6 +322,127 @@ function CurrencyTracker:UpdateDisplay()
     end
 end
 
+function CurrencyTracker:CreateReloadButton(parent)
+    local reloadBtn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    reloadBtn:SetSize(140, 25)
+    reloadBtn:SetPoint("BOTTOMLEFT", 10, 0)
+    reloadBtn:SetText("Reload UI")
+
+    reloadBtn:SetScript("OnClick", function()
+        ReloadUI()
+    end)
+    return reloadBtn
+end
+
+function CurrencyTracker:CreateColorPicker(parent, currencyID, anchorTo, label)
+    local btn = CreateFrame("Button", nil, parent)
+    btn:SetSize(24, 24)
+    btn:SetPoint("RIGHT", parent, "RIGHT", -300, 0)
+    btn:SetPoint("TOP", anchorTo, "TOP", 0, 0)
+
+    btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+
+    btn.tex = btn:CreateTexture(nil, "BACKGROUND")
+    btn.tex:SetAllPoints()
+
+    local function UpdateSwatch()
+        local c = CurrencyTracker:GetCrestColor(currencyID)
+        btn.tex:SetColorTexture(c[1], c[2], c[3])
+
+        if label then
+            label:SetTextColor(c[1], c[2], c[3])
+        end
+    end
+
+    UpdateSwatch()
+
+    btn:SetScript("OnClick", function(_, button)
+        local current = CurrencyTracker:GetCrestColor(currencyID)
+
+        if button == "LeftButton" and IsShiftKeyDown() then
+            for _, id in ipairs(DEFAULT_CURRENCIES) do
+                CurrencyTrackerAcctDB.crestColors[id] = { current[1], current[2], current[3] }
+            end
+
+            CurrencyTracker:UpdateDisplay()
+
+            -- Refresh settings UI so all swatches + labels update
+            if CurrencyTracker.settings then
+                CurrencyTracker.settings:Hide()
+                CurrencyTracker.settings = nil
+                CurrencyTracker:CreateSettings()
+                CurrencyTracker.settings:Show()
+            end
+
+            return
+        end
+
+        -- RIGHT CLICK → RESET SINGLE CREST
+        if button == "RightButton" then
+            local default = CURRENCY_COLORS[currencyID]
+            CurrencyTrackerAcctDB.crestColors[currencyID] = { default[1], default[2], default[3] }
+
+            btn.tex:SetColorTexture(default[1], default[2], default[3])
+            if label then
+                label:SetTextColor(default[1], default[2], default[3])
+            end
+
+            CurrencyTracker:UpdateDisplay()
+            return
+        end
+
+        -- NORMAL LEFT CLICK → COLOR PICKER
+        local function Callback(restore)
+            local r, g, b
+
+            if restore then
+                r, g, b = restore.r, restore.g, restore.b
+            else
+                r, g, b = ColorPickerFrame:GetColorRGB()
+            end
+
+            CurrencyTrackerAcctDB.crestColors[currencyID] = { r, g, b }
+
+            btn.tex:SetColorTexture(r, g, b)
+            if label then
+                label:SetTextColor(r, g, b)
+            end
+
+            CurrencyTracker:UpdateDisplay()
+        end
+
+        local info = {
+            r = current[1],
+            g = current[2],
+            b = current[3],
+            hasOpacity = false,
+            swatchFunc = Callback,
+            cancelFunc = Callback,
+        }
+
+        ColorPickerFrame:SetupColorPickerAndShow(info)
+    end)
+    btn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+
+        local info = C_CurrencyInfo.GetCurrencyInfo(currencyID)
+        GameTooltip:AddLine(info and info.name or "Crest Color", 1, 0.82, 0)
+
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Left click to change", 0.8, 0.8, 0.8)
+        GameTooltip:AddLine("Right click to reset", 0.8, 0.8, 0.8)
+        GameTooltip:AddLine("Shift + Left click to copy to all", 0.6, 0.9, 1)
+
+        GameTooltip:Show()
+    end)
+
+    btn:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    return btn
+end
+
 -------------------------------------------------
 -- SETTINGS WINDOW
 -------------------------------------------------
@@ -375,7 +513,12 @@ function CurrencyTracker:CreateSettings()
     tab3:SetText("Item Upgrade")
     tab3:SetPoint("LEFT", tab2, "RIGHT", -15, 0)
 
-    PanelTemplates_SetNumTabs(f, 3)
+    local tab4 = CreateFrame("Button", nil, f, "PanelTabButtonTemplate")
+    tab4:SetID(4)
+    tab4:SetText("Crest Tracker")
+    tab4:SetPoint("LEFT", tab3, "RIGHT", -15, 0)
+
+    PanelTemplates_SetNumTabs(f, 4)
     PanelTemplates_SetTab(f, 1)
 
     -------------------------------------------------
@@ -393,11 +536,16 @@ function CurrencyTracker:CreateSettings()
     IUTab:SetAllPoints()
     IUTab:Hide()
 
+    local CrestTab = CreateFrame("Frame", nil, f.content)
+    CrestTab:SetAllPoints()
+    CrestTab:Hide()
+
     local function SelectTab(id)
         PanelTemplates_SetTab(f, id)
         general:SetShown(id == 1)
         allTab:SetShown(id == 2)
         IUTab:SetShown(id == 3)
+        CrestTab:SetShown(id == 4)
     end
 
     tab1:SetScript("OnClick", function() SelectTab(1) end)
@@ -406,6 +554,7 @@ function CurrencyTracker:CreateSettings()
         SelectTab(3)
         CurrencyTracker:UpdateUpgradeGoldDisplay()
     end)
+    tab4:SetScript("OnClick", function() SelectTab(4) end)
 
     -------------------------------------------------
     -- GENERAL TAB CONTENT
@@ -446,19 +595,12 @@ function CurrencyTracker:CreateSettings()
 
     local playerName = UnitName("player")
 
-    if playerName == "Falcóne" or playerName == "Lindstrom" or playerName == "Sanbr" then
-        local reloadBtn = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
-        reloadBtn:SetSize(140, 25)
-        reloadBtn:SetPoint("TOPLEFT", resetBtn, "BOTTOMLEFT", 0, -8)
-        reloadBtn:SetText("Reload UI")
-
-        reloadBtn:SetScript("OnClick", function()
-            ReloadUI()
-        end)
+    if CurrencyTracker:ReloadButtonShow(playerName) then
+        CurrencyTracker:CreateReloadButton(general)
     end
 
     local slider = CreateFrame("Slider", nil, general, "OptionsSliderTemplate")
-    slider:SetPoint("TOPLEFT", resetBtn, "BOTTOMLEFT", 0, -40)
+    slider:SetPoint("TOPLEFT", resetBtn, "BOTTOMLEFT", 0, -20)
     slider:SetMinMaxValues(0, 1)
     slider:SetValueStep(0.05)
     slider:SetObeyStepOnDrag(true)
@@ -608,16 +750,15 @@ function CurrencyTracker:CreateSettings()
     -------------------------------------------------
     -- UPGRADE GOLD SPENT DISPLAY
     -------------------------------------------------
-    local playerName = UnitName("player")
     local fontSizeGold = 18
     local yOffset = -10
 
-    local titleText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    titleText:SetPoint("TOPLEFT", 15, 0)
+    local titleText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    titleText:SetPoint("TOP", 0, 0)
     titleText:SetText("Gold Spent on Item Upgrades")
 
     local seasonText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    seasonText:SetPoint("TOPLEFT", titleText, "BOTTOMLEFT", 0, yOffset - 5)
+    seasonText:SetPoint("TOPLEFT", titleText, "BOTTOMLEFT", -100, yOffset - 5)
     seasonText:SetText("Current Season:")
     seasonText:SetTextColor(0.25, 0.78, 0.92)
 
@@ -672,16 +813,87 @@ function CurrencyTracker:CreateSettings()
     -------------------------------------------------
 
 
-    if playerName == "Falcóne" or playerName == "Lindstrom" or playerName == "Sanbr" then
-        local reloadBtn = CreateFrame("Button", nil, IUTab, "UIPanelButtonTemplate")
-        reloadBtn:SetSize(140, 25)
-        reloadBtn:SetPoint("BOTTOMLEFT", 10, 0)
-        reloadBtn:SetText("Reload UI")
-
-        reloadBtn:SetScript("OnClick", function()
-            ReloadUI()
-        end)
+    if CurrencyTracker:ReloadButtonShow(playerName) then
+        CurrencyTracker:CreateReloadButton(IUTab)
     end
+
+
+    -------------------------------------------------
+    -- Crest Tracker Settings tab
+    -------------------------------------------------
+    local yOffsetCT = -30
+    local xoffsetCT = 15
+
+    local CTTitleText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    CTTitleText:SetPoint("TOP", 0, 0)
+    CTTitleText:SetText("Crest Tracker Settings")
+
+    local AdventurerText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    AdventurerText:SetPoint("TOPLEFT", CrestTab, "TOPLEFT", xoffsetCT, yOffsetCT - 35)
+    AdventurerText:SetText("Adventurer Crest:")
+    CurrencyTracker:CreateColorPicker(CrestTab, AdventurerCrestID, AdventurerText, AdventurerText)
+
+    local VeteranText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    VeteranText:SetPoint("TOPLEFT", AdventurerText, "BOTTOMLEFT", 0, yOffsetCT)
+    VeteranText:SetText("Veteran Crest:")
+    CurrencyTracker:CreateColorPicker(CrestTab, VeteranCrestID, VeteranText, VeteranText)
+
+    local ChampionText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    ChampionText:SetPoint("TOPLEFT", VeteranText, "BOTTOMLEFT", 0, yOffsetCT)
+    ChampionText:SetText("Champion Crest:")
+    CurrencyTracker:CreateColorPicker(CrestTab, ChampionCrestID, ChampionText, ChampionText)
+
+    local HeroText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    HeroText:SetPoint("TOPLEFT", ChampionText, "BOTTOMLEFT", 0, yOffsetCT)
+    HeroText:SetText("Hero Crest:")
+    CurrencyTracker:CreateColorPicker(CrestTab, HeroCrestID, HeroText, HeroText)
+
+    local MythText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    MythText:SetPoint("TOPLEFT", HeroText, "BOTTOMLEFT", 0, yOffsetCT)
+    MythText:SetText("Myth Crest:")
+    CurrencyTracker:CreateColorPicker(CrestTab, MythCrestID, MythText, MythText)
+
+    local resetAllBtn = CreateFrame("Button", nil, CrestTab, "UIPanelButtonTemplate")
+    resetAllBtn:SetSize(180, 24)
+    resetAllBtn:SetPoint("BOTTOMRIGHT", -10, 0)
+    resetAllBtn:SetText("Reset All Crest Colors")
+
+    resetAllBtn:SetScript("OnClick", function()
+        CurrencyTrackerAcctDB.crestColors = CopyTable(CURRENCY_COLORS)
+
+        CurrencyTracker:UpdateDisplay()
+
+        -- Force UI refresh of color swatches + labels
+        if CrestTab and CrestTab:GetChildren() then
+            for _, child in ipairs({ CrestTab:GetChildren() }) do
+                if child.tex then
+                    local id = nil
+                    -- try to infer via closure not needed, just refresh all
+                    -- simplest solution: rebuild settings
+                    CurrencyTracker.settings:Hide()
+                    CurrencyTracker.settings = nil
+                    CurrencyTracker:CreateSettings()
+                    CurrencyTracker.settings:Show()
+                    SelectTab(4)
+                    break
+                end
+            end
+        end
+    end)
+
+    if CurrencyTracker:ReloadButtonShow(playerName) then
+        CurrencyTracker:CreateReloadButton(CrestTab)
+    end
+end
+
+function CurrencyTracker:ReloadButtonShow(playerName)
+    for _, name in ipairs(DebugPlayers) do
+        if playerName == name then
+            return true
+        end
+    end
+
+    return false
 end
 
 function CurrencyTracker:ToggleSettings()
