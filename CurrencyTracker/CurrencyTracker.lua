@@ -1,5 +1,5 @@
 --retail only
-local addonName, CurrencyTracker = ...
+local  CurrencyTracker = ...
 CurrencyTracker = CreateFrame("Frame")
 
 -------------------------------------------------
@@ -13,7 +13,6 @@ local VeteranCrestID = 3341
 local ChampionCrestID = 3343
 local HeroCrestID = 3345
 local MythCrestID = 3347
-local ToonGoldSpent = 0
 
 local DEFAULT_CURRENCIES = { AdventurerCrestID, VeteranCrestID, ChampionCrestID, HeroCrestID, MythCrestID }
 
@@ -59,6 +58,17 @@ local function InitDB()
     CurrencyTrackerDB.showCrestBar = CurrencyTrackerDB.showCrestBar or false
     CurrencyTrackerDB.upgradeGoldSpent = CurrencyTrackerDB.upgradeGoldSpent or 0
     CurrencyTrackerDB.upgradeGoldSpentXpac = CurrencyTrackerDB.upgradeGoldSpentXpac or 0
+
+    -- Crest visibility (per character)
+    if not CurrencyTrackerDB.crestVisibility then
+        CurrencyTrackerDB.crestVisibility = {
+            [AdventurerCrestID] = true,
+            [VeteranCrestID] = true,
+            [ChampionCrestID] = true,
+            [HeroCrestID] = true,
+            [MythCrestID] = true,
+        }
+    end
 
     --Account lvl saved data
     CurrencyTrackerAcctDB.upgradeGoldSpentAcct = CurrencyTrackerAcctDB.upgradeGoldSpentAcct or 0
@@ -280,7 +290,7 @@ function CurrencyTracker:UpdateDisplay()
         local index = 1
         for _, id in ipairs(DEFAULT_CURRENCIES) do
             local info = C_CurrencyInfo.GetCurrencyInfo(id)
-            if (info.totalEarned > 0 or info.quantity > 0) then
+            if CurrencyTrackerDB.crestVisibility[id] ~= false and (info.totalEarned > 0 or info.quantity > 0) then
                 if info and info.name then
                     local bar = self:CreateCrestBar(info, index)
                     table.insert(self.repBars, bar)
@@ -337,7 +347,7 @@ end
 function CurrencyTracker:CreateColorPicker(parent, currencyID, anchorTo, label)
     local btn = CreateFrame("Button", nil, parent)
     btn:SetSize(24, 24)
-    btn:SetPoint("RIGHT", parent, "RIGHT", -300, 0)
+    btn:SetPoint("RIGHT", parent, "RIGHT", -265, 0)
     btn:SetPoint("TOP", anchorTo, "TOP", 0, 0)
 
     btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -606,7 +616,7 @@ function CurrencyTracker:CreateSettings()
     slider:SetObeyStepOnDrag(true)
     slider:SetWidth(200)
     slider:SetValue(CurrencyTrackerDB.opacity)
-    slider:SetScript("OnValueChanged", function(self, value)
+    slider:SetScript("OnValueChanged", function(value)
         CurrencyTrackerDB.opacity = value
         CurrencyTracker:UpdateDisplay()
     end)
@@ -737,7 +747,7 @@ function CurrencyTracker:CreateSettings()
         content:SetHeight(math.abs(y) + 20)
     end
 
-    searchBox:HookScript("OnTextChanged", function(self)
+    searchBox:HookScript("OnTextChanged", function()
         RebuildCurrencyList()
     end)
     RebuildCurrencyList()
@@ -821,37 +831,92 @@ function CurrencyTracker:CreateSettings()
     -------------------------------------------------
     -- Crest Tracker Settings tab
     -------------------------------------------------
-    local yOffsetCT = -30
+    local yOffsetCT = -10
     local xoffsetCT = 15
 
     local CTTitleText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     CTTitleText:SetPoint("TOP", 0, 0)
     CTTitleText:SetText("Crest Tracker Settings")
 
+    local AdventurerCheck = CreateFrame("CheckButton", nil, CrestTab, "UICheckButtonTemplate")
+    AdventurerCheck:SetPoint("TOPLEFT", CrestTab, "TOPLEFT", xoffsetCT, yOffsetCT - 35)
+    AdventurerCheck:SetChecked(CurrencyTrackerDB.crestVisibility[AdventurerCrestID] ~= false)
+
     local AdventurerText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    AdventurerText:SetPoint("TOPLEFT", CrestTab, "TOPLEFT", xoffsetCT, yOffsetCT - 35)
+    AdventurerText:SetPoint("LEFT", AdventurerCheck, "RIGHT", 4, 0)
     AdventurerText:SetText("Adventurer Crest:")
+
+    AdventurerCheck:SetScript("OnClick", function(self)
+        CurrencyTrackerDB.crestVisibility[AdventurerCrestID] = self:GetChecked()
+        CurrencyTracker:UpdateDisplay()
+    end)
+
     CurrencyTracker:CreateColorPicker(CrestTab, AdventurerCrestID, AdventurerText, AdventurerText)
 
+
+    local VeteranCheck = CreateFrame("CheckButton", nil, CrestTab, "UICheckButtonTemplate")
+    VeteranCheck:SetPoint("TOPLEFT", AdventurerCheck, "BOTTOMLEFT", 0, yOffsetCT)
+    VeteranCheck:SetChecked(CurrencyTrackerDB.crestVisibility[VeteranCrestID] ~= false)
+
     local VeteranText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    VeteranText:SetPoint("TOPLEFT", AdventurerText, "BOTTOMLEFT", 0, yOffsetCT)
+    VeteranText:SetPoint("LEFT", VeteranCheck, "RIGHT", 4, 0)
     VeteranText:SetText("Veteran Crest:")
+
+    VeteranCheck:SetScript("OnClick", function(self)
+        CurrencyTrackerDB.crestVisibility[VeteranCrestID] = self:GetChecked()
+        CurrencyTracker:UpdateDisplay()
+    end)
+
     CurrencyTracker:CreateColorPicker(CrestTab, VeteranCrestID, VeteranText, VeteranText)
 
+
+    local ChampionCheck = CreateFrame("CheckButton", nil, CrestTab, "UICheckButtonTemplate")
+    ChampionCheck:SetPoint("TOPLEFT", VeteranCheck, "BOTTOMLEFT", 0, yOffsetCT)
+    ChampionCheck:SetChecked(CurrencyTrackerDB.crestVisibility[ChampionCrestID] ~= false)
+
     local ChampionText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    ChampionText:SetPoint("TOPLEFT", VeteranText, "BOTTOMLEFT", 0, yOffsetCT)
+    ChampionText:SetPoint("LEFT", ChampionCheck, "RIGHT", 4, 0)
     ChampionText:SetText("Champion Crest:")
+
+    ChampionCheck:SetScript("OnClick", function(self)
+        CurrencyTrackerDB.crestVisibility[ChampionCrestID] = self:GetChecked()
+        CurrencyTracker:UpdateDisplay()
+    end)
+
     CurrencyTracker:CreateColorPicker(CrestTab, ChampionCrestID, ChampionText, ChampionText)
 
+
+    local HeroCheck = CreateFrame("CheckButton", nil, CrestTab, "UICheckButtonTemplate")
+    HeroCheck:SetPoint("TOPLEFT", ChampionCheck, "BOTTOMLEFT", 0, yOffsetCT)
+    HeroCheck:SetChecked(CurrencyTrackerDB.crestVisibility[HeroCrestID] ~= false)
+
     local HeroText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    HeroText:SetPoint("TOPLEFT", ChampionText, "BOTTOMLEFT", 0, yOffsetCT)
+    HeroText:SetPoint("LEFT", HeroCheck, "RIGHT", 4, 0)
     HeroText:SetText("Hero Crest:")
+
+    HeroCheck:SetScript("OnClick", function(self)
+        CurrencyTrackerDB.crestVisibility[HeroCrestID] = self:GetChecked()
+        CurrencyTracker:UpdateDisplay()
+    end)
+
     CurrencyTracker:CreateColorPicker(CrestTab, HeroCrestID, HeroText, HeroText)
 
+
+    local MythCheck = CreateFrame("CheckButton", nil, CrestTab, "UICheckButtonTemplate")
+    MythCheck:SetPoint("TOPLEFT", HeroCheck, "BOTTOMLEFT", 0, yOffsetCT)
+    MythCheck:SetChecked(CurrencyTrackerDB.crestVisibility[MythCrestID] ~= false)
+
     local MythText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    MythText:SetPoint("TOPLEFT", HeroText, "BOTTOMLEFT", 0, yOffsetCT)
+    MythText:SetPoint("LEFT", MythCheck, "RIGHT", 4, 0)
     MythText:SetText("Myth Crest:")
+
+    MythCheck:SetScript("OnClick", function(self)
+        CurrencyTrackerDB.crestVisibility[MythCrestID] = self:GetChecked()
+        CurrencyTracker:UpdateDisplay()
+    end)
+
     CurrencyTracker:CreateColorPicker(CrestTab, MythCrestID, MythText, MythText)
+
 
     local resetAllBtn = CreateFrame("Button", nil, CrestTab, "UIPanelButtonTemplate")
     resetAllBtn:SetSize(180, 24)
@@ -867,14 +932,12 @@ function CurrencyTracker:CreateSettings()
         if CrestTab and CrestTab:GetChildren() then
             for _, child in ipairs({ CrestTab:GetChildren() }) do
                 if child.tex then
-                    local id = nil
                     -- try to infer via closure not needed, just refresh all
                     -- simplest solution: rebuild settings
                     CurrencyTracker.settings:Hide()
                     CurrencyTracker.settings = nil
                     CurrencyTracker:CreateSettings()
                     CurrencyTracker.settings:Show()
-                    SelectTab(4)
                     break
                 end
             end
