@@ -1,5 +1,5 @@
 --retail only
-local  CurrencyTracker = ...
+local CurrencyTracker = ...
 CurrencyTracker = CreateFrame("Frame")
 
 -------------------------------------------------
@@ -52,7 +52,7 @@ local function InitDB()
 
     -- toon lvl saved data
     CurrencyTrackerDB.fontSize = CurrencyTrackerDB.fontSize or 14
-    CurrencyTrackerDB.opacity = CurrencyTrackerDB.opacity or 0.3
+    CurrencyTrackerDB.opacity = tonumber(CurrencyTrackerDB.opacity) or 0.3
     CurrencyTrackerDB.showGold = CurrencyTrackerDB.showGold or false
     CurrencyTrackerDB.position = CurrencyTrackerDB.position or { "CENTER", "CENTER", 0, 0 }
     CurrencyTrackerDB.showCrestBar = CurrencyTrackerDB.showCrestBar or false
@@ -317,7 +317,8 @@ function CurrencyTracker:UpdateDisplay()
     local totalHeight = math.abs(yOffset) + (repBarCount * (CrestFramWHeight + 6)) + 10
 
     f:SetSize(width + 20, totalHeight)
-    f.bg:SetColorTexture(0, 0, 0, CurrencyTrackerDB.opacity)
+    local opacity = tonumber(CurrencyTrackerDB.opacity) or 0.3
+    f.bg:SetColorTexture(0, 0, 0, opacity)
 
     -- Reposition rep bars under the last text line
     local startY = -5
@@ -616,8 +617,8 @@ function CurrencyTracker:CreateSettings()
     slider:SetObeyStepOnDrag(true)
     slider:SetWidth(200)
     slider:SetValue(CurrencyTrackerDB.opacity)
-    slider:SetScript("OnValueChanged", function(value)
-        CurrencyTrackerDB.opacity = value
+    slider:SetScript("OnValueChanged", function(self, value)
+        CurrencyTrackerDB.opacity = tonumber(value) or 0.3
         CurrencyTracker:UpdateDisplay()
     end)
 
