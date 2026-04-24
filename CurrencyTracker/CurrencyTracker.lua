@@ -1,4 +1,3 @@
---retail only
 local CurrencyTracker = ...
 CurrencyTracker = CreateFrame("Frame")
 
@@ -90,6 +89,28 @@ local function InitDB()
     if not CurrencyTrackerAcctDB.crestColors then
         CurrencyTrackerAcctDB.crestColors = CopyTable(CURRENCY_COLORS)
     end
+end
+
+local function GetCoinAtlasString(money, iconSize)
+    iconSize = iconSize or 14
+
+    local gold = floor(money / 10000)
+    local silver = floor((money % 10000) / 100)
+    local copper = money % 100
+
+    local str = ""
+
+    if gold > 0 then
+        str = str .. gold .. "|A:Coin-Gold:" .. iconSize .. ":" .. iconSize .. "|a "
+    end
+
+    -- if silver > 0 or gold > 0 then
+    --     str = str .. silver .. "|A:Coin-Silver:" .. iconSize .. ":" .. iconSize .. "|a "
+    -- end
+
+    -- str = str .. copper .. "|A:Coin-Copper:" .. iconSize .. ":" .. iconSize .. "|a"
+
+    return str
 end
 
 function CurrencyTracker:GetCrestColor(currencyID)
@@ -307,7 +328,7 @@ function CurrencyTracker:UpdateDisplay()
         local line = f:CreateFontString(nil, "OVERLAY", "GameFontWhite")
         line:SetFont(STANDARD_TEXT_FONT, fontSize, "OUTLINE")
         line:SetPoint("TOPLEFT", 10, yOffset)
-        line:SetText(C_CurrencyInfo.GetCoinTextureString(GetMoney()))
+        line:SetText(GetCoinAtlasString(GetMoney()))
         yOffset = yOffset - (fontSize + 6)
         width = math.max(width, line:GetStringWidth())
         table.insert(self.lines, line)
@@ -763,9 +784,9 @@ function CurrencyTracker:CreateSettings()
     -- UPGRADE GOLD SPENT DISPLAY
     -------------------------------------------------
     local fontSizeGold = 18
-    local yOffset = -10
+    local yOffset      = -10
 
-    local titleText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    local titleText    = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     titleText:SetPoint("TOP", 0, 0)
     titleText:SetText("Gold Spent on Item Upgrades")
 
@@ -776,7 +797,7 @@ function CurrencyTracker:CreateSettings()
 
     local upgradeSpentText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     upgradeSpentText:SetPoint("TOPLEFT", seasonText, "BOTTOMLEFT", 0, yOffset)
-    upgradeSpentText:SetText(C_CurrencyInfo.GetCoinTextureString(CurrencyTrackerDB.upgradeGoldSpent))
+    upgradeSpentText:SetText(GetCoinAtlasString(CurrencyTrackerDB.upgradeGoldSpent))
     upgradeSpentText:SetFontHeight(fontSizeGold)
     upgradeSpentText:SetTextColor(0.25, 0.78, 0.92)
     self.upgradeSpentText = upgradeSpentText
@@ -788,7 +809,7 @@ function CurrencyTracker:CreateSettings()
 
     local upgradeSpentXpacText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     upgradeSpentXpacText:SetPoint("TOPLEFT", xpacText, "BOTTOMLEFT", 0, yOffset)
-    upgradeSpentXpacText:SetText(C_CurrencyInfo.GetCoinTextureString(CurrencyTrackerDB.upgradeGoldSpentXpac))
+    upgradeSpentXpacText:SetText(GetCoinAtlasString(CurrencyTrackerDB.upgradeGoldSpentXpac))
     upgradeSpentXpacText:SetFontHeight(fontSizeGold)
     upgradeSpentXpacText:SetTextColor(0.77, 0.12, 0.23)
     self.upgradeSpentXpacText = upgradeSpentXpacText
@@ -801,11 +822,15 @@ function CurrencyTracker:CreateSettings()
 
     local upgradeSpentXpacAccountText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     upgradeSpentXpacAccountText:SetPoint("TOPLEFT", accountText, "BOTTOMLEFT", 0, yOffset)
-    upgradeSpentXpacAccountText:SetText(C_CurrencyInfo.GetCoinTextureString(CurrencyTrackerAcctDB.upgradeGoldSpentAcct))
+    upgradeSpentXpacAccountText:SetText(GetCoinAtlasString(CurrencyTrackerAcctDB.upgradeGoldSpentAcct))
     upgradeSpentXpacAccountText:SetFontHeight(fontSizeGold)
     upgradeSpentXpacAccountText:SetTextColor(accountFontColor[1], accountFontColor[2], accountFontColor[3])
     self.upgradeSpentXpacAccountText = upgradeSpentXpacAccountText
     local resetUpgrade = CreateFrame("Button", nil, IUTab, "UIPanelButtonTemplate")
+
+    local testtext = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    testtext:SetPoint("TOPLEFT", upgradeSpentXpacAccountText, "BOTTOMLEFT", 0, yOffset)
+
 
 
     resetUpgrade:SetSize(160, 22)
@@ -816,7 +841,7 @@ function CurrencyTracker:CreateSettings()
         CurrencyTrackerDB.upgradeGoldSpent = 0
         upgradeSpentText:SetText(
             "Gold Spent on Item Upgrades: " ..
-            C_CurrencyInfo.GetCoinTextureString(0)
+            GetCoinAtlasString(0)
         )
     end)
 
@@ -859,7 +884,7 @@ function CurrencyTracker:CreateSettings()
     colorHeader:SetText("Color")
 
     -------------------------------------------------
-    -- ROW HELPER FUNCTION 
+    -- ROW HELPER FUNCTION
     -------------------------------------------------
     local function CreateCrestRow(index, text, currencyID)
         local y = yStart + (index * rowSpacing)
@@ -1017,15 +1042,15 @@ function CurrencyTracker:UpdateUpgradeGoldDisplay()
     if not self.upgradeSpentText then return end
 
     self.upgradeSpentText:SetText(
-        C_CurrencyInfo.GetCoinTextureString(CurrencyTrackerDB.upgradeGoldSpent)
+        GetCoinAtlasString(CurrencyTrackerDB.upgradeGoldSpent)
     )
 
     self.upgradeSpentXpacText:SetText(
-        C_CurrencyInfo.GetCoinTextureString(CurrencyTrackerDB.upgradeGoldSpentXpac)
+        GetCoinAtlasString(CurrencyTrackerDB.upgradeGoldSpentXpac)
     )
 
     self.upgradeSpentXpacAccountText:SetText(
-        C_CurrencyInfo.GetCoinTextureString(CurrencyTrackerAcctDB.upgradeGoldSpentAcct)
+        GetCoinAtlasString(CurrencyTrackerAcctDB.upgradeGoldSpentAcct)
     )
 end
 
