@@ -12,8 +12,9 @@ local VeteranCrestID = 3341
 local ChampionCrestID = 3343
 local HeroCrestID = 3345
 local MythCrestID = 3347
+local NebulousVoidcoreID = 3418
 
-local DEFAULT_CURRENCIES = { AdventurerCrestID, VeteranCrestID, ChampionCrestID, HeroCrestID, MythCrestID }
+local DEFAULT_CURRENCIES = { AdventurerCrestID, VeteranCrestID, ChampionCrestID, HeroCrestID, MythCrestID, NebulousVoidcoreID }
 
 local CURRENCY_COLORS = {
     [AdventurerCrestID] = { 1.00, 0.49, 0.040 },
@@ -21,7 +22,9 @@ local CURRENCY_COLORS = {
     [ChampionCrestID] = { 0.60, 0.30, 1.00 },
     [HeroCrestID] = { 0.13, 0.69, 0.29 },
     [MythCrestID] = { 0.77, 0.12, 0.23 },
+    [NebulousVoidcoreID] = { 0.50, 0.50, 0.50 },
 }
+
 local DebugPlayers = {
     "Falcóne",
     "Lindstrom",
@@ -95,8 +98,8 @@ local function GetCoinAtlasString(money, iconSize)
     iconSize = iconSize or 14
 
     local gold = floor(money / 10000)
-    local silver = floor((money % 10000) / 100)
-    local copper = money % 100
+    -- local silver = floor((money % 10000) / 100)
+    -- local copper = money % 100
 
     local str = ""
 
@@ -920,6 +923,7 @@ function CurrencyTracker:CreateSettings()
     CreateCrestRow(2, "Champion Crest:", ChampionCrestID)
     CreateCrestRow(3, "Hero Crest:", HeroCrestID)
     CreateCrestRow(4, "Myth Crest:", MythCrestID)
+    CreateCrestRow(5, "Nebulous Voidcore:", NebulousVoidcoreID)
 
 
     local resetAllBtn = CreateFrame("Button", nil, CrestTab, "UIPanelButtonTemplate")
