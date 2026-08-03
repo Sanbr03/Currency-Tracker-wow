@@ -1,37 +1,37 @@
-local CurrencyTracker = ...
 CurrencyTracker = CreateFrame("Frame")
 
 -------------------------------------------------
 -- DEFAULTS
 -------------------------------------------------
 
-local CrestFrameWidth = 200
-local CrestFrameHeight = 42
-local AdventurerCrestID = 3383
-local VeteranCrestID = 3341
-local ChampionCrestID = 3343
-local HeroCrestID = 3345
-local MythCrestID = 3347
-local NebulousVoidcoreID = 3418
+CurrencyTracker.CrestFrameWidth = 200
+CurrencyTracker.CrestFrameHeight = 42
+CurrencyTracker.AdventurerCrestID = 3383
+CurrencyTracker.VeteranCrestID = 3341
+CurrencyTracker.ChampionCrestID = 3343
+CurrencyTracker.HeroCrestID = 3345
+CurrencyTracker.MythCrestID = 3347
+CurrencyTracker.NebulousVoidcoreID = 3418
 
-local DEFAULT_CURRENCIES = { AdventurerCrestID, VeteranCrestID, ChampionCrestID, HeroCrestID, MythCrestID,
-    NebulousVoidcoreID }
+CurrencyTracker.DEFAULT_CURRENCIES = { CurrencyTracker.AdventurerCrestID, CurrencyTracker.VeteranCrestID, CurrencyTracker.ChampionCrestID, CurrencyTracker.HeroCrestID, CurrencyTracker.MythCrestID,
+    CurrencyTracker.NebulousVoidcoreID }
 
-local CURRENCY_COLORS = {
-    [AdventurerCrestID] = { 1.00, 0.49, 0.040 },
-    [VeteranCrestID] = { 0.25, 0.78, 0.92 },
-    [ChampionCrestID] = { 0.60, 0.30, 1.00 },
-    [HeroCrestID] = { 0.13, 0.69, 0.29 },
-    [MythCrestID] = { 0.77, 0.12, 0.23 },
-    [NebulousVoidcoreID] = { 0.50, 0.50, 0.50 },
+CurrencyTracker.CURRENCY_COLORS = {
+    [CurrencyTracker.AdventurerCrestID] = { 1.00, 0.49, 0.040 },
+    [CurrencyTracker.VeteranCrestID] = { 0.25, 0.78, 0.92 },
+    [CurrencyTracker.ChampionCrestID] = { 0.60, 0.30, 1.00 },
+    [CurrencyTracker.HeroCrestID] = { 0.13, 0.69, 0.29 },
+    [CurrencyTracker.MythCrestID] = { 0.77, 0.12, 0.23 },
+    [CurrencyTracker.NebulousVoidcoreID] = { 0.50, 0.50, 0.50 },
 }
 
-local DebugPlayers = {
+CurrencyTracker.DebugPlayers = {
     "Falcóne",
     "Lindstrom",
     "Sanbr",
     "Sânbr",
 }
+
 
 local function CopyTable(tbl)
     local copy = {}
@@ -66,11 +66,11 @@ local function InitDB()
     -- Crest visibility (per character)
     if not CurrencyTrackerDB.crestVisibility then
         CurrencyTrackerDB.crestVisibility = {
-            [AdventurerCrestID] = true,
-            [VeteranCrestID] = true,
-            [ChampionCrestID] = true,
-            [HeroCrestID] = true,
-            [MythCrestID] = true,
+            [CurrencyTracker.AdventurerCrestID] = true,
+            [CurrencyTracker.VeteranCrestID] = true,
+            [CurrencyTracker.ChampionCrestID] = true,
+            [CurrencyTracker.HeroCrestID] = true,
+            [CurrencyTracker.MythCrestID] = true,
         }
     end
 
@@ -84,18 +84,18 @@ local function InitDB()
 
     -- First-time initialization
     if not CurrencyTrackerDB.initialized then
-        CurrencyTrackerDB.currencies = CopyTable(DEFAULT_CURRENCIES)
+        CurrencyTrackerDB.currencies = CopyTable(CurrencyTracker.DEFAULT_CURRENCIES)
         CurrencyTrackerDB.showCrestBar = true
         CurrencyTrackerDB.initialized = true
     end
 
     -- Crest Colors (saved)
     if not CurrencyTrackerAcctDB.crestColors then
-        CurrencyTrackerAcctDB.crestColors = CopyTable(CURRENCY_COLORS)
+        CurrencyTrackerAcctDB.crestColors = CopyTable(CurrencyTracker.CURRENCY_COLORS)
     end
 end
 
-local function GetCoinAtlasString(money, iconSize)
+ function CurrencyTracker:GetCoinAtlasString(money, iconSize)
     iconSize = iconSize or 14
 
     local gold = floor(money / 10000)
@@ -121,14 +121,14 @@ function CurrencyTracker:GetCrestColor(currencyID)
     if CurrencyTrackerAcctDB and CurrencyTrackerAcctDB.crestColors and CurrencyTrackerAcctDB.crestColors[currencyID] then
         return CurrencyTrackerAcctDB.crestColors[currencyID]
     end
-    return CURRENCY_COLORS[currencyID] or { 1, 1, 1 }
+    return CurrencyTracker.CURRENCY_COLORS[currencyID] or { 1, 1, 1 }
 end
 
 function CurrencyTracker:CreateCrestBar(info, index)
     local color = CurrencyTracker:GetCrestColor(info.currencyID)
 
     local f = CreateFrame("Frame", nil, self.frame, "BackdropTemplate")
-    f:SetSize(CrestFrameWidth, CrestFrameHeight)
+    f:SetSize(CurrencyTracker.CrestFrameWidth, CurrencyTracker.CrestFrameHeight)
 
     if index == 1 then
         f:SetPoint("TOP", self.frame, "BOTTOM", 0, -6)
@@ -189,7 +189,7 @@ function CurrencyTracker:CreateCrestBar(info, index)
     local bar = f:CreateTexture(nil, "OVERLAY")
     bar:SetPoint("LEFT", barBG, "LEFT")
     bar:SetHeight(14)
-    bar:SetWidth((CrestFrameWidth - 16) * percent)
+    bar:SetWidth((CurrencyTracker.CrestFrameWidth - 16) * percent)
 
     -- BAR COLOR MATCHES FRAME
     bar:SetColorTexture(color[1], color[2], color[3], 1)
@@ -314,14 +314,14 @@ function CurrencyTracker:UpdateDisplay()
     -- Create rep bars if enabled
     if CurrencyTrackerDB.showCrestBar then
         local index = 1
-        for _, id in ipairs(DEFAULT_CURRENCIES) do
+        for _, id in ipairs(CurrencyTracker.DEFAULT_CURRENCIES) do
             local info = C_CurrencyInfo.GetCurrencyInfo(id)
             if info and info.name and CurrencyTrackerDB.crestVisibility[id] ~= false and (info.totalEarned > 0 or info.quantity > 0) then
                 local bar = self:CreateCrestBar(info, index)
                 table.insert(self.repBars, bar)
                 index = index + 1
                 repBarCount = repBarCount + 1
-                width = CrestFrameWidth
+                width = CurrencyTracker.CrestFrameWidth
             end
         end
     end
@@ -330,7 +330,7 @@ function CurrencyTracker:UpdateDisplay()
         local line = f:CreateFontString(nil, "OVERLAY", "GameFontWhite")
         line:SetFont(STANDARD_TEXT_FONT, fontSize, "OUTLINE")
         line:SetPoint("TOPLEFT", 10, yOffset)
-        line:SetText(GetCoinAtlasString(GetMoney()))
+        line:SetText(CurrencyTracker:GetCoinAtlasString(GetMoney()))
         yOffset = yOffset - (fontSize + 6)
         width = math.max(width, line:GetStringWidth())
         table.insert(self.lines, line)
@@ -338,7 +338,7 @@ function CurrencyTracker:UpdateDisplay()
 
 
     -- Calculate total height: lines + spacing + rep bars
-    local totalHeight = math.abs(yOffset) + (repBarCount * (CrestFrameHeight + 6)) + 10
+    local totalHeight = math.abs(yOffset) + (repBarCount * (CurrencyTracker.CrestFrameHeight + 6)) + 10
 
     f:SetSize(width + 20, totalHeight)
     local opacity = tonumber(CurrencyTrackerDB.opacity) or 0.3
@@ -352,609 +352,9 @@ function CurrencyTracker:UpdateDisplay()
 
     for i, bar in ipairs(self.repBars) do
         bar:ClearAllPoints()
-        bar:SetPoint("TOPLEFT", 10, startY - ((i - 1) * (CrestFrameHeight + 6)))
+        bar:SetPoint("TOPLEFT", 10, startY - ((i - 1) * (CurrencyTracker.CrestFrameHeight + 6)))
         bar:Show()
     end
-end
-
-function CurrencyTracker:CreateReloadButton(parent)
-    local reloadBtn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    reloadBtn:SetSize(140, 25)
-    reloadBtn:SetPoint("BOTTOMLEFT", 10, 10)
-    reloadBtn:SetText("Reload UI")
-
-    reloadBtn:SetScript("OnClick", function()
-        ReloadUI()
-    end)
-    return reloadBtn
-end
-
-function CurrencyTracker:CreateColorPicker(parent, currencyID, anchorTo, label)
-    local btn = CreateFrame("Button", nil, parent)
-    btn:SetSize(24, 24)
-    btn:SetPoint("RIGHT", parent, "RIGHT", -250, 0)
-    btn:SetPoint("TOP", anchorTo, "TOP", 0, 0)
-
-    btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-
-    btn.tex = btn:CreateTexture(nil, "BACKGROUND")
-    btn.tex:SetAllPoints()
-
-    local function UpdateSwatch()
-        local c = CurrencyTracker:GetCrestColor(currencyID)
-        btn.tex:SetColorTexture(c[1], c[2], c[3])
-
-        if label then
-            label:SetTextColor(c[1], c[2], c[3])
-        end
-    end
-
-    UpdateSwatch()
-
-    btn:SetScript("OnClick", function(_, button)
-        local current = CurrencyTracker:GetCrestColor(currencyID)
-
-        if button == "LeftButton" and IsShiftKeyDown() then
-            for _, id in ipairs(DEFAULT_CURRENCIES) do
-                CurrencyTrackerAcctDB.crestColors[id] = { current[1], current[2], current[3] }
-            end
-
-            CurrencyTracker:UpdateDisplay()
-
-            -- Refresh settings UI so all swatches + labels update
-            if CurrencyTracker.settings then
-                CurrencyTracker.settings:Hide()
-                CurrencyTracker.settings = nil
-                CurrencyTracker:CreateSettings()
-                CurrencyTracker.settings:Show()
-            end
-
-            return
-        end
-
-        -- RIGHT CLICK → RESET SINGLE CREST
-        if button == "RightButton" then
-            local default = CURRENCY_COLORS[currencyID]
-            CurrencyTrackerAcctDB.crestColors[currencyID] = { default[1], default[2], default[3] }
-
-            btn.tex:SetColorTexture(default[1], default[2], default[3])
-            if label then
-                label:SetTextColor(default[1], default[2], default[3])
-            end
-
-            CurrencyTracker:UpdateDisplay()
-            return
-        end
-
-        -- NORMAL LEFT CLICK → COLOR PICKER
-        local function Callback(restore)
-            local r, g, b
-
-            if restore then
-                r, g, b = restore.r, restore.g, restore.b
-            else
-                r, g, b = ColorPickerFrame:GetColorRGB()
-            end
-
-            CurrencyTrackerAcctDB.crestColors[currencyID] = { r, g, b }
-
-            btn.tex:SetColorTexture(r, g, b)
-            if label then
-                label:SetTextColor(r, g, b)
-            end
-
-            CurrencyTracker:UpdateDisplay()
-        end
-
-        local info = {
-            r = current[1],
-            g = current[2],
-            b = current[3],
-            hasOpacity = false,
-            swatchFunc = Callback,
-            cancelFunc = Callback,
-        }
-
-        ColorPickerFrame:SetupColorPickerAndShow(info)
-    end)
-    btn:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-
-        local info = C_CurrencyInfo.GetCurrencyInfo(currencyID)
-        GameTooltip:AddLine(info and info.name or "Crest Color", 1, 0.82, 0)
-
-        GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("Left click to change", 0.8, 0.8, 0.8)
-        GameTooltip:AddLine("Right click to reset", 0.8, 0.8, 0.8)
-        GameTooltip:AddLine("Shift + Left click to copy to all", 0.6, 0.9, 1)
-
-        GameTooltip:Show()
-    end)
-
-    btn:SetScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
-
-    return btn
-end
-
--------------------------------------------------
--- SETTINGS WINDOW
--------------------------------------------------
-
-function CurrencyTracker:CreateSettings()
-    local settings = CreateFrame("Frame", "CurrencyTrackerSettings", UIParent, "ButtonFrameTemplate")
-    settings:SetSize(520, 500)
-    settings:SetPoint("CENTER")
-    settings:SetFrameStrata("DIALOG")
-    settings:SetToplevel(true)
-    settings:SetMovable(true)
-    settings:EnableMouse(true)
-    settings:RegisterForDrag("LeftButton")
-    settings:SetScript("OnDragStart", settings.StartMoving)
-    settings:SetScript("OnDragStop", settings.StopMovingOrSizing)
-
-    -------------------------------------------------
-    -- TITLE
-    -------------------------------------------------
-    settings:SetTitle("Currency Tracker Settings")
-
-    -------------------------------------------------
-    -- Portrait Texture
-    -------------------------------------------------
-    settings:SetPortraitTextureRaw(5868902)
-
-    -------------------------------------------------
-    -- CONTENT CONTAINER
-    -------------------------------------------------
-    local contentFrame = settings.Inset or settings.Content
-    settings.content = contentFrame
-    settings:Hide()
-
-    -------------------------------------------------
-    -- TAB BUTTONS
-    -------------------------------------------------
-
-    local tab1 = CreateFrame("Button", nil, settings, "PanelTabButtonTemplate")
-    tab1:SetID(1)
-    tab1:SetText("General")
-    tab1:SetPoint("TOPLEFT", settings, "BOTTOMLEFT", 15, 5)
-
-    local tab2 = CreateFrame("Button", nil, settings, "PanelTabButtonTemplate")
-    tab2:SetID(2)
-    tab2:SetText("All Currencies")
-    tab2:SetPoint("LEFT", tab1, "RIGHT", -15, 0)
-
-    local tab3 = CreateFrame("Button", nil, settings, "PanelTabButtonTemplate")
-    tab3:SetID(3)
-    tab3:SetText("Item Upgrade")
-    tab3:SetPoint("LEFT", tab2, "RIGHT", -15, 0)
-
-    local tab4 = CreateFrame("Button", nil, settings, "PanelTabButtonTemplate")
-    tab4:SetID(4)
-    tab4:SetText("Crest Tracker")
-    tab4:SetPoint("LEFT", tab3, "RIGHT", -15, 0)
-
-    PanelTemplates_SetNumTabs(settings, 4)
-    PanelTemplates_SetTab(settings, 1)
-
-    -------------------------------------------------
-    -- CONTENT FRAMES (FIXED ANCHORING)
-    -------------------------------------------------
-
-    local general = CreateFrame("Frame", nil, settings.content)
-    general:SetAllPoints()
-
-    local allTab = CreateFrame("Frame", nil, settings.content)
-    allTab:SetAllPoints()
-    allTab:Hide()
-
-    local IUTab = CreateFrame("Frame", nil, settings.content)
-    IUTab:SetAllPoints()
-    IUTab:Hide()
-
-    local CrestTab = CreateFrame("Frame", nil, settings.content)
-    CrestTab:SetAllPoints()
-    CrestTab:Hide()
-
-    local function SelectTab(id)
-        PanelTemplates_SetTab(settings, id)
-        general:SetShown(id == 1)
-        allTab:SetShown(id == 2)
-        IUTab:SetShown(id == 3)
-        CrestTab:SetShown(id == 4)
-    end
-
-    tab1:SetScript("OnClick", function() SelectTab(1) end)
-    tab2:SetScript("OnClick", function() SelectTab(2) end)
-    tab3:SetScript("OnClick", function()
-        SelectTab(3)
-        CurrencyTracker:UpdateUpgradeGoldDisplay()
-    end)
-    tab4:SetScript("OnClick", function() SelectTab(4) end)
-
-    -------------------------------------------------
-    -- GENERAL TAB CONTENT
-    -------------------------------------------------
-
-
-
-    local goldCheck = CreateFrame("CheckButton", nil, general, "UICheckButtonTemplate")
-    goldCheck:SetPoint("TOPLEFT", 10, -10)
-    goldCheck.text:SetText("Show Gold")
-    goldCheck:SetChecked(CurrencyTrackerDB.showGold)
-    goldCheck:SetScript("OnClick", function(self)
-        CurrencyTrackerDB.showGold = self:GetChecked()
-        CurrencyTracker:UpdateDisplay()
-    end)
-
-    local CrestBarCheck = CreateFrame("CheckButton", nil, general, "UICheckButtonTemplate")
-    CrestBarCheck:SetPoint("TOPLEFT", goldCheck, "BOTTOMLEFT", 0, -5)
-    CrestBarCheck.text:SetText("Show Progress Bar for Crests")
-    CrestBarCheck:SetChecked(CurrencyTrackerDB.showCrestBar)
-    CrestBarCheck:SetScript("OnClick", function(self)
-        CurrencyTrackerDB.showCrestBar = self:GetChecked()
-        CurrencyTracker:UpdateDisplay()
-    end)
-
-    local resetBtn = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
-    resetBtn:SetSize(140, 25)
-    resetBtn:SetPoint("TOPLEFT", CrestBarCheck, "BOTTOMLEFT", 0, -10)
-    resetBtn:SetText("Reset Position")
-    resetBtn:SetScript("OnClick", function()
-        local f = CurrencyTracker.frame
-        CurrencyTrackerDB.position = { "CENTER", "CENTER", 0, 0 }
-        f:ClearAllPoints()
-        f:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-    end)
-
-    -------------------------------------------------
-    -- RELOAD UI BUTTON
-    -------------------------------------------------
-
-    local playerName = UnitName("player")
-
-    if CurrencyTracker:ReloadButtonShow(playerName) then
-        CurrencyTracker:CreateReloadButton(general)
-    end
-
-    local slider = CreateFrame("Slider", nil, general, "OptionsSliderTemplate")
-    slider:SetPoint("TOPLEFT", resetBtn, "BOTTOMLEFT", 0, -20)
-    slider:SetMinMaxValues(0, 1)
-    slider:SetValueStep(0.05)
-    slider:SetObeyStepOnDrag(true)
-    slider:SetWidth(200)
-    slider:SetValue(CurrencyTrackerDB.opacity)
-    slider:SetScript("OnValueChanged", function(self, value)
-        CurrencyTrackerDB.opacity = tonumber(value) or 0.3
-        CurrencyTracker:UpdateDisplay()
-    end)
-
-    slider.label = slider:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    slider.label:SetPoint("TOP", slider, "BOTTOM", 0, -2)
-    slider.label:SetText("Background Opacity")
-
-    -------------------------------------------------
-    -- ALL CURRENCIES TAB (SCROLL + SEARCH)
-    -------------------------------------------------
-    local checkboxes = {}
-
-    -- Search Box
-    local searchBox = CreateFrame("EditBox", nil, allTab, "SearchBoxTemplate")
-    searchBox:SetPoint("TOPLEFT", allTab, "TOPLEFT", 20, -40)
-    searchBox:SetPoint("TOPRIGHT", allTab, "TOPRIGHT", -20, -40)
-    searchBox:SetHeight(20)
-    searchBox:SetAutoFocus(false)
-
-    local uncheckBtn = CreateFrame("Button", nil, allTab, "UIPanelButtonTemplate")
-    uncheckBtn:SetSize(140, 25)
-    uncheckBtn:SetPoint("TOPRIGHT", allTab, "TOPRIGHT", -20, -10)
-    uncheckBtn:SetText("Uncheck All")
-    uncheckBtn:SetScript("OnClick", function()
-        for _, cb in ipairs(checkboxes) do
-            cb:SetChecked(false)
-            cb:GetScript("OnClick")(cb)
-        end
-    end)
-
-    -- Scroll Frame
-    local scroll = CreateFrame("ScrollFrame", nil, allTab, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", searchBox, "BOTTOMLEFT", 0, -5)
-    scroll:SetPoint("BOTTOMRIGHT", -43, 10)
-
-    local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(1, 1)
-    scroll:SetScrollChild(content)
-
-    local function RebuildCurrencyList()
-        -- Clear old checkboxes
-        for _, cb in ipairs(checkboxes) do
-            cb:Hide()
-        end
-        wipe(checkboxes)
-
-        local filter = searchBox:GetText()
-        if filter and filter ~= "" then
-            filter = string.lower(filter)
-        else
-            filter = nil
-        end
-
-        local y = -5
-
-        -- Build a master list from:
-        -- 1) Default currencies
-        -- 2) Currently tracked currencies
-        local masterList = {}
-
-        local function AddCurrency(id)
-            if id and not tContains(masterList, id) then
-                table.insert(masterList, id)
-            end
-        end
-
-        -- 1️ Always include defaults
-        for _, id in ipairs(DEFAULT_CURRENCIES) do
-            AddCurrency(id)
-        end
-
-        -- 2️ Include tracked currencies
-        for _, id in ipairs(CurrencyTrackerDB.currencies) do
-            AddCurrency(id)
-        end
-
-        -- 3️ Include character discovered currencies
-        for i = 1, C_CurrencyInfo.GetCurrencyListSize() do
-            local info = C_CurrencyInfo.GetCurrencyListInfo(i)
-            if info and not info.isHeader then
-                AddCurrency(info.currencyID)
-            end
-        end
-
-        -- Now build UI from master list
-        for _, currencyID in ipairs(masterList) do
-            local info = C_CurrencyInfo.GetCurrencyInfo(currencyID)
-
-            if info and info.name then
-                local nameMatch = true
-
-                if filter and filter ~= "" then
-                    nameMatch = string.find(string.lower(info.name), filter, 1, true)
-                end
-
-                if nameMatch then
-                    local check = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-                    check:SetPoint("TOPLEFT", 10, y)
-
-                    local iconSize = 16
-                    local iconString = "|T" .. info.iconFileID .. ":" ..
-                        iconSize .. ":" .. iconSize .. ":0:0:64:64:4:60:4:60|t "
-
-                    check.text:SetText(iconString .. info.name)
-                    check:SetChecked(tContains(CurrencyTrackerDB.currencies, currencyID))
-
-                    check:SetScript("OnClick", function(self)
-                        if self:GetChecked() then
-                            table.insert(CurrencyTrackerDB.currencies, currencyID)
-                        else
-                            for k, v in ipairs(CurrencyTrackerDB.currencies) do
-                                if v == currencyID then
-                                    table.remove(CurrencyTrackerDB.currencies, k)
-                                    break
-                                end
-                            end
-                        end
-                        CurrencyTracker:UpdateDisplay()
-                    end)
-
-                    table.insert(checkboxes, check)
-                    y = y - 25
-                end
-            end
-        end
-
-        content:SetHeight(math.abs(y) + 20)
-    end
-
-    searchBox:HookScript("OnTextChanged", function()
-        RebuildCurrencyList()
-    end)
-    RebuildCurrencyList()
-    self.settings = settings
-    self:UpdateUpgradeGoldDisplay()
-
-    -------------------------------------------------
-    -- Item Upgrade gold tab
-    -------------------------------------------------
-    -------------------------------------------------
-    -- UPGRADE GOLD SPENT DISPLAY
-    -------------------------------------------------
-    local fontSizeGold = 18
-    local yOffset      = -10
-
-    local titleText    = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    titleText:SetPoint("TOP", 0, 0)
-    titleText:SetText("Gold Spent on Item Upgrades")
-
-    local seasonText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    seasonText:SetPoint("TOPLEFT", titleText, "BOTTOMLEFT", -100, yOffset - 5)
-    seasonText:SetText("Current Season:")
-    seasonText:SetTextColor(0.25, 0.78, 0.92)
-
-    local upgradeSpentText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    upgradeSpentText:SetPoint("TOPLEFT", seasonText, "BOTTOMLEFT", 0, yOffset)
-    upgradeSpentText:SetText(GetCoinAtlasString(CurrencyTrackerDB.upgradeGoldSpent))
-    upgradeSpentText:SetFontHeight(fontSizeGold)
-    upgradeSpentText:SetTextColor(0.25, 0.78, 0.92)
-    self.upgradeSpentText = upgradeSpentText
-
-    local xpacText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    xpacText:SetPoint("TOPLEFT", upgradeSpentText, "BOTTOMLEFT", 0, yOffset)
-    xpacText:SetText("Current Xpac:")
-    xpacText:SetTextColor(0.77, 0.12, 0.23)
-
-    local upgradeSpentXpacText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    upgradeSpentXpacText:SetPoint("TOPLEFT", xpacText, "BOTTOMLEFT", 0, yOffset)
-    upgradeSpentXpacText:SetText(GetCoinAtlasString(CurrencyTrackerDB.upgradeGoldSpentXpac))
-    upgradeSpentXpacText:SetFontHeight(fontSizeGold)
-    upgradeSpentXpacText:SetTextColor(0.77, 0.12, 0.23)
-    self.upgradeSpentXpacText = upgradeSpentXpacText
-
-    local accountFontColor = CURRENCY_COLORS[HeroCrestID]
-    local accountText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    accountText:SetPoint("TOPLEFT", upgradeSpentXpacText, "BOTTOMLEFT", 0, yOffset)
-    accountText:SetText("Account:")
-    accountText:SetTextColor(accountFontColor[1], accountFontColor[2], accountFontColor[3])
-
-    local upgradeSpentXpacAccountText = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    upgradeSpentXpacAccountText:SetPoint("TOPLEFT", accountText, "BOTTOMLEFT", 0, yOffset)
-    upgradeSpentXpacAccountText:SetText(GetCoinAtlasString(CurrencyTrackerAcctDB.upgradeGoldSpentAcct))
-    upgradeSpentXpacAccountText:SetFontHeight(fontSizeGold)
-    upgradeSpentXpacAccountText:SetTextColor(accountFontColor[1], accountFontColor[2], accountFontColor[3])
-    self.upgradeSpentXpacAccountText = upgradeSpentXpacAccountText
-    local resetUpgrade = CreateFrame("Button", nil, IUTab, "UIPanelButtonTemplate")
-
-    local testtext = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    testtext:SetPoint("TOPLEFT", upgradeSpentXpacAccountText, "BOTTOMLEFT", 0, yOffset)
-
-
-
-    resetUpgrade:SetSize(160, 25)
-    resetUpgrade:SetPoint("BOTTOMRIGHT", -10, 10)
-    resetUpgrade:SetText("Reset Gold (Season)")
-
-    resetUpgrade:SetScript("OnClick", function()
-        CurrencyTrackerDB.upgradeGoldSpent = 0
-        upgradeSpentText:SetText(
-            "Gold Spent on Item Upgrades: " ..
-            GetCoinAtlasString(0)
-        )
-    end)
-
-    -------------------------------------------------
-    -- RELOAD UI BUTTON
-    -------------------------------------------------
-
-
-    if CurrencyTracker:ReloadButtonShow(playerName) then
-        CurrencyTracker:CreateReloadButton(IUTab)
-    end
-
-
-    -------------------------------------------------
-    -- Crest Tracker Settings tab
-    -------------------------------------------------
-    local yStart = -65
-    local rowSpacing = -30
-
-    local nameX = 15
-    local enableX = 180
-    local colorX = 240
-
-    -------------------------------------------------
-    -- TITLE
-    -------------------------------------------------
-    local CTTitleText = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    CTTitleText:SetPoint("TOP", 0, -10)
-    CTTitleText:SetText("Crest Tracker Settings")
-
-    -------------------------------------------------
-    -- COLUMN HEADERS
-    -------------------------------------------------
-    local enableHeader = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    enableHeader:SetPoint("TOPLEFT", CrestTab, "TOPLEFT", enableX, -40)
-    enableHeader:SetText("Enable")
-
-    local colorHeader = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    colorHeader:SetPoint("TOPLEFT", CrestTab, "TOPLEFT", colorX, -40)
-    colorHeader:SetText("Color")
-
-    -------------------------------------------------
-    -- ROW HELPER FUNCTION
-    -------------------------------------------------
-    local function CreateCrestRow(index, text, currencyID)
-        local y = yStart + (index * rowSpacing)
-
-        -- NAME
-        local label = CrestTab:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        label:SetPoint("TOPLEFT", CrestTab, "TOPLEFT", nameX, y)
-        label:SetText(text)
-
-        -- CHECKBOX (Enable column)
-        local check = CreateFrame("CheckButton", nil, CrestTab, "UICheckButtonTemplate")
-        check:SetPoint("CENTER", CrestTab, "TOPLEFT", enableX + 10, y - 8)
-        check:SetChecked(CurrencyTrackerDB.crestVisibility[currencyID] ~= false)
-
-        check:SetScript("OnClick", function(self)
-            CurrencyTrackerDB.crestVisibility[currencyID] = self:GetChecked()
-            CurrencyTracker:UpdateDisplay()
-        end)
-
-        -- COLOR PICKER (Color column)
-        local picker = CurrencyTracker:CreateColorPicker(CrestTab, currencyID, label, label)
-        picker:ClearAllPoints()
-        picker:SetPoint("CENTER", CrestTab, "TOPLEFT", colorX + 12, y - 8)
-
-        return label, check, picker
-    end
-
-    -------------------------------------------------
-    -- ROWS
-    -------------------------------------------------
-    CreateCrestRow(0, "Adventurer Crest:", AdventurerCrestID)
-    CreateCrestRow(1, "Veteran Crest:", VeteranCrestID)
-    CreateCrestRow(2, "Champion Crest:", ChampionCrestID)
-    CreateCrestRow(3, "Hero Crest:", HeroCrestID)
-    CreateCrestRow(4, "Myth Crest:", MythCrestID)
-    CreateCrestRow(5, "Nebulous Voidcore:", NebulousVoidcoreID)
-
-
-    local resetAllBtn = CreateFrame("Button", nil, CrestTab, "UIPanelButtonTemplate")
-    resetAllBtn:SetSize(180, 25)
-    resetAllBtn:SetPoint("BOTTOMRIGHT", -10, 10)
-    resetAllBtn:SetText("Reset All Crest Colors")
-
-    resetAllBtn:SetScript("OnClick", function()
-        CurrencyTrackerAcctDB.crestColors = CopyTable(CURRENCY_COLORS)
-
-        CurrencyTracker:UpdateDisplay()
-
-        -- Force UI refresh of color swatches + labels
-        if CrestTab and CrestTab:GetChildren() then
-            for _, child in ipairs({ CrestTab:GetChildren() }) do
-                if child.tex then
-                    -- try to infer via closure not needed, just refresh all
-                    -- simplest solution: rebuild settings
-                    CurrencyTracker.settings:Hide()
-                    CurrencyTracker.settings = nil
-                    CurrencyTracker:CreateSettings()
-                    CurrencyTracker.settings:Show()
-                    break
-                end
-            end
-        end
-    end)
-
-    if CurrencyTracker:ReloadButtonShow(playerName) then
-        CurrencyTracker:CreateReloadButton(CrestTab)
-    end
-end
-
-function CurrencyTracker:ReloadButtonShow(playerName)
-    for _, name in ipairs(DebugPlayers) do
-        if playerName == name then
-            return true
-        end
-    end
-
-    return false
-end
-
-function CurrencyTracker:ToggleSettings()
-    if not self.settings then
-        self:CreateSettings()
-    end
-    self.settings:SetShown(not self.settings:IsShown())
 end
 
 -------------------------------------------------
@@ -1029,15 +429,15 @@ function CurrencyTracker:UpdateUpgradeGoldDisplay()
     if not self.upgradeSpentText then return end
 
     self.upgradeSpentText:SetText(
-        GetCoinAtlasString(CurrencyTrackerDB.upgradeGoldSpent)
+        CurrencyTracker:GetCoinAtlasString(CurrencyTrackerDB.upgradeGoldSpent)
     )
 
     self.upgradeSpentXpacText:SetText(
-        GetCoinAtlasString(CurrencyTrackerDB.upgradeGoldSpentXpac)
+        CurrencyTracker:GetCoinAtlasString(CurrencyTrackerDB.upgradeGoldSpentXpac)
     )
 
     self.upgradeSpentXpacAccountText:SetText(
-        GetCoinAtlasString(CurrencyTrackerAcctDB.upgradeGoldSpentAcct)
+        CurrencyTracker:GetCoinAtlasString(CurrencyTrackerAcctDB.upgradeGoldSpentAcct)
     )
 end
 
