@@ -3,7 +3,6 @@ CurrencyTracker = CreateFrame("Frame")
 -------------------------------------------------
 -- DEFAULTS
 -------------------------------------------------
-
 CurrencyTracker.CrestFrameWidth = 200
 CurrencyTracker.CrestFrameHeight = 42
 CurrencyTracker.AdventurerCrestID = 3383
@@ -32,12 +31,11 @@ CurrencyTracker.DebugPlayers = {
     "Sânbr",
 }
 
-
-local function CopyTable(tbl)
+function CurrencyTracker:CopyTable(tbl)
     local copy = {}
     for k, v in pairs(tbl) do
         if type(v) == "table" then
-            copy[k] = CopyTable(v)
+            copy[k] = CurrencyTracker:CopyTable(v)
         else
             copy[k] = v
         end
@@ -216,7 +214,6 @@ end
 -------------------------------------------------
 -- MAIN DISPLAY FRAME
 -------------------------------------------------
-
 function CurrencyTracker:CreateDisplay()
     local f = CreateFrame("Frame", "CurrencyTrackerFrame", UIParent)
     f:SetMovable(true)
@@ -254,7 +251,6 @@ end
 -------------------------------------------------
 -- UPDATE DISPLAY
 -------------------------------------------------
-
 function CurrencyTracker:UpdateDisplay()
     local f = self.frame
     if not f then return end
@@ -360,7 +356,6 @@ end
 -------------------------------------------------
 -- MINIMAP BUTTON
 -------------------------------------------------
-
 function CurrencyTracker:CreateMinimapButton()
     local button = CreateFrame("Button", "CurrencyTrackerMinimapButton", Minimap)
     button:SetSize(31, 31)
@@ -397,7 +392,6 @@ end
 -------------------------------------------------
 -- UPGRADE VENDOR GOLD TRACKER
 -------------------------------------------------
-
 local lastMoney = 0
 
 local function IsUpgradeFrameOpen()
@@ -424,7 +418,6 @@ local function UpdateUpgradeGold()
     lastMoney = currentMoney
 end
 
-
 function CurrencyTracker:UpdateUpgradeGoldDisplay()
     if not self.upgradeSpentText then return end
 
@@ -444,7 +437,6 @@ end
 -------------------------------------------------
 -- EVENTS
 -------------------------------------------------
-
 CurrencyTracker:RegisterEvent("PLAYER_LOGIN")
 CurrencyTracker:RegisterEvent("CURRENCY_DISPLAY_UPDATE")
 CurrencyTracker:RegisterEvent("PLAYER_MONEY")
