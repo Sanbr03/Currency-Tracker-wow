@@ -25,14 +25,12 @@ function CurrencyTracker:CreateSettings()
     -------------------------------------------------
     -- CONTENT CONTAINER
     -------------------------------------------------
-    local contentFrame = settings.Inset or settings.Content
-    settings.content = contentFrame
+    settings.content = settings.Inset
     settings:Hide()
 
     -------------------------------------------------
     -- TAB BUTTONS
     -------------------------------------------------
-
     local tab1 = CreateFrame("Button", nil, settings, "PanelTabButtonTemplate")
     tab1:SetID(1)
     tab1:SetText("General")
@@ -59,7 +57,6 @@ function CurrencyTracker:CreateSettings()
     -------------------------------------------------
     -- CONTENT FRAMES (FIXED ANCHORING)
     -------------------------------------------------
-
     local general = CreateFrame("Frame", nil, settings.content)
     general:SetAllPoints()
 
@@ -94,9 +91,6 @@ function CurrencyTracker:CreateSettings()
     -------------------------------------------------
     -- GENERAL TAB CONTENT
     -------------------------------------------------
-
-
-
     local goldCheck = CreateFrame("CheckButton", nil, general, "UICheckButtonTemplate")
     goldCheck:SetPoint("TOPLEFT", 10, -10)
     goldCheck.text:SetText("Show Gold")
@@ -129,7 +123,6 @@ function CurrencyTracker:CreateSettings()
     -------------------------------------------------
     -- RELOAD UI BUTTON
     -------------------------------------------------
-
     local playerName = UnitName("player")
 
     if CurrencyTracker:ReloadButtonShow(playerName) then
@@ -253,7 +246,9 @@ function CurrencyTracker:CreateSettings()
 
                     check:SetScript("OnClick", function(self)
                         if self:GetChecked() then
-                            table.insert(CurrencyTrackerDB.currencies, currencyID)
+                            if not tContains(CurrencyTrackerDB.currencies, currencyID) then
+                                table.insert(CurrencyTrackerDB.currencies, currencyID)
+                            end
                         else
                             for k, v in ipairs(CurrencyTrackerDB.currencies) do
                                 if v == currencyID then
@@ -283,8 +278,6 @@ function CurrencyTracker:CreateSettings()
 
     -------------------------------------------------
     -- Item Upgrade gold tab
-    -------------------------------------------------
-    -------------------------------------------------
     -- UPGRADE GOLD SPENT DISPLAY
     -------------------------------------------------
     local fontSizeGold = 18
@@ -332,11 +325,6 @@ function CurrencyTracker:CreateSettings()
     self.upgradeSpentXpacAccountText = upgradeSpentXpacAccountText
     local resetUpgrade = CreateFrame("Button", nil, IUTab, "UIPanelButtonTemplate")
 
-    local testtext = IUTab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    testtext:SetPoint("TOPLEFT", upgradeSpentXpacAccountText, "BOTTOMLEFT", 0, yOffset)
-
-
-
     resetUpgrade:SetSize(160, 25)
     resetUpgrade:SetPoint("BOTTOMRIGHT", -10, 10)
     resetUpgrade:SetText("Reset Gold (Season)")
@@ -352,19 +340,15 @@ function CurrencyTracker:CreateSettings()
     -------------------------------------------------
     -- RELOAD UI BUTTON
     -------------------------------------------------
-
-
     if CurrencyTracker:ReloadButtonShow(playerName) then
         CurrencyTracker:CreateReloadButton(IUTab)
     end
-
 
     -------------------------------------------------
     -- Crest Tracker Settings tab
     -------------------------------------------------
     local yStart = -65
     local rowSpacing = -30
-
     local nameX = 15
     local enableX = 180
     local colorX = 240
@@ -426,14 +410,13 @@ function CurrencyTracker:CreateSettings()
     CreateCrestRow(4, "Myth Crest:", CurrencyTracker.MythCrestID)
     CreateCrestRow(5, "Nebulous Voidcore:", CurrencyTracker.NebulousVoidcoreID)
 
-
     local resetAllBtn = CreateFrame("Button", nil, CrestTab, "UIPanelButtonTemplate")
     resetAllBtn:SetSize(180, 25)
     resetAllBtn:SetPoint("BOTTOMRIGHT", -10, 10)
     resetAllBtn:SetText("Reset All Crest Colors")
 
     resetAllBtn:SetScript("OnClick", function()
-        CurrencyTrackerAcctDB.crestColors = CopyTable(CurrencyTracker.CURRENCY_COLORS)
+        CurrencyTrackerAcctDB.crestColors = CurrencyTracker:CopyTable(CurrencyTracker.CURRENCY_COLORS)
 
         CurrencyTracker:UpdateDisplay()
 
@@ -457,8 +440,6 @@ function CurrencyTracker:CreateSettings()
         CurrencyTracker:CreateReloadButton(CrestTab)
     end
 end
-
-
 
 function CurrencyTracker:CreateReloadButton(parent)
     local reloadBtn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
@@ -584,9 +565,6 @@ end
 -------------------------------------------------
 -- SETTINGS WINDOW
 -------------------------------------------------
-
-
-
 function CurrencyTracker:ReloadButtonShow(playerName)
     for _, name in ipairs(CurrencyTracker.DebugPlayers) do
         if playerName == name then
