@@ -3,11 +3,11 @@ CurrencyTracker = CurrencyTracker or CreateFrame("Frame")
 CurrencyTracker.CrestFrameWidth = 200
 CurrencyTracker.CrestFrameHeight = 42
 
-CurrencyTracker.AdventurerCrestID = 3383
-CurrencyTracker.VeteranCrestID = 3341
-CurrencyTracker.ChampionCrestID = 3343
-CurrencyTracker.HeroCrestID = 3345
-CurrencyTracker.MythCrestID = 3347
+CurrencyTracker.AdventurerCrestID = 3442
+CurrencyTracker.VeteranCrestID = 3443
+CurrencyTracker.ChampionCrestID = 3444
+CurrencyTracker.HeroCrestID = 3445
+CurrencyTracker.MythCrestID = 3446
 CurrencyTracker.NebulousVoidcoreID = 3418
 
 CurrencyTracker.DEFAULT_CURRENCIES = {
