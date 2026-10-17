@@ -1,8 +1,8 @@
-## Interface: 120007, 120100
+## Interface: 120105
 ## Title: Currency Tracker
 ## Notes: Tracks selected currencies in a movable transparent list
 ## Author: Sanbr
-## Version: 1.19
+## Version: 1.20
 ## SavedVariablesPerCharacter: CurrencyTrackerDB
 ## SavedVariables: CurrencyTrackerAcctDB
 ## IconTexture: 5868902
