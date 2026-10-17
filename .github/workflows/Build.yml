@@ -26,7 +26,7 @@ jobs:
             exit 1
           fi
 
-          mkdir -p dist/GroupILvlTooltip
+          mkdir -p dist/CurrencyTracker
           cp CurrencyTracker/CurrencyTracker.lua CurrencyTracker/Constants.lua CurrencyTracker/Settings.lua CurrencyTracker/CurrencyTracker.toc dist/CurrencyTracker/
           sed -i "s/^## Version:.*/## Version: $VERSION/" dist/CurrencyTracker/CurrencyTracker.toc
           cd dist
