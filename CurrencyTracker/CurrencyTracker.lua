@@ -1,4 +1,5 @@
 CurrencyTracker = CurrencyTracker
+
 -------------------------------------------------
 -- DEFAULTS
 -------------------------------------------------
@@ -66,23 +67,12 @@ end
 
 function CurrencyTracker:GetCoinAtlasString(money, iconSize)
     iconSize = iconSize or 14
-
     local gold = floor(money / 10000)
-    -- local silver = floor((money % 10000) / 100)
-    -- local copper = money % 100
-
     local str = ""
 
     if gold > 0 then
         str = str .. gold .. "|A:Coin-Gold:" .. iconSize .. ":" .. iconSize .. "|a "
     end
-
-    -- if silver > 0 or gold > 0 then
-    --     str = str .. silver .. "|A:Coin-Silver:" .. iconSize .. ":" .. iconSize .. "|a "
-    -- end
-
-    -- str = str .. copper .. "|A:Coin-Copper:" .. iconSize .. ":" .. iconSize .. "|a"
-
     return str
 end
 
