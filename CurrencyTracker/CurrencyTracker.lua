@@ -65,7 +65,7 @@ local function InitDB()
     end
 end
 
- function CurrencyTracker:GetCoinAtlasString(money, iconSize)
+function CurrencyTracker:GetCoinAtlasString(money, iconSize)
     iconSize = iconSize or 14
 
     local gold = floor(money / 10000)
@@ -256,7 +256,16 @@ function CurrencyTracker:UpdateDisplay()
             line:SetPoint("TOPLEFT", 10, yOffset)
             local currencyLine
 
-            if info.totalEarned == 0 then
+            if info.maxWeeklyQuantity > 0 then
+                currencyLine = "|T" .. info.iconFileID .. ":" .. fontSize .. ":" .. fontSize .. "|t "
+                    .. info.name .. " " .. info.quantity
+                    .. " (" .. info.quantityEarnedThisWeek .. "/" .. info.maxWeeklyQuantity .. ")"
+
+                line:SetText(currencyLine)
+                yOffset = yOffset - (fontSize + 6)
+                width = math.max(width, line:GetStringWidth())
+                table.insert(self.lines, line)
+            elseif info.totalEarned == 0 then
                 currencyLine = "|T" .. info.iconFileID .. ":" .. fontSize .. ":" .. fontSize .. "|t "
                     .. info.name .. " " .. info.quantity
 
